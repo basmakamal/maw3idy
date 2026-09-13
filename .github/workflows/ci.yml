@@ -26,7 +26,7 @@ jobs:
         with:
           php-version: ${{ env.PHP_VERSION }}
           coverage: none
-      - uses: ramsey/composer-install@v3
+      - uses: ramsey/composer-install@v4
       - run: vendor/bin/pint --test
 
   analyse:
@@ -38,7 +38,7 @@ jobs:
         with:
           php-version: ${{ env.PHP_VERSION }}
           coverage: none
-      - uses: ramsey/composer-install@v3
+      - uses: ramsey/composer-install@v4
       - run: vendor/bin/phpstan analyse --memory-limit=1G --error-format=github
 
   audit:
@@ -50,7 +50,7 @@ jobs:
         with:
           php-version: ${{ env.PHP_VERSION }}
           coverage: none
-      - uses: ramsey/composer-install@v3
+      - uses: ramsey/composer-install@v4
       - run: composer audit
       - uses: actions/setup-node@v4
         with:
@@ -94,7 +94,7 @@ jobs:
           extensions: mbstring, pdo_mysql, bcmath, intl
           coverage: pcov
 
-      - uses: ramsey/composer-install@v3
+      - uses: ramsey/composer-install@v4
 
       - uses: actions/setup-node@v4
         with:
