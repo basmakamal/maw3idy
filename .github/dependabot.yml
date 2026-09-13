@@ -16,6 +16,11 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    groups:
+      # vite and laravel-vite-plugin pin each other's majors via peer deps;
+      # bumping them separately can never pass `npm ci`.
+      vite:
+        patterns: ["vite", "laravel-vite-plugin", "@tailwindcss/vite", "@vitejs/*"]
 
   - package-ecosystem: github-actions
     directory: /
