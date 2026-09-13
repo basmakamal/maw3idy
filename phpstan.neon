@@ -1,0 +1,14 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 6
+
+    paths:
+        - app
+        - database
+        - routes
+
+    # Larastan understands Eloquent; keep the analysis honest but not noisy.
+    checkModelProperties: true
+    reportUnmatchedIgnoredErrors: true
