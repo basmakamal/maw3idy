@@ -14,9 +14,10 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT"></a>
 </p>
 
-> **Status:** in development. Phase 0 (repo, CI, hardening baseline) and Phase 1
-> (multi-tenancy, registration, tenant-scoped auth, dashboard shell) are complete.
-> Progress is tracked in [`ROADMAP.md`](ROADMAP.md); each phase lands as a pull request.
+> **Status:** in development. Phases 0–2 are complete: repo and CI, multi-tenancy with
+> tenant-scoped auth, and the booking domain (services, staff, schedules, a pure availability
+> engine, a race-proof public booking flow). Progress is tracked in [`ROADMAP.md`](ROADMAP.md);
+> each phase lands as a pull request.
 
 ---
 
@@ -34,12 +35,18 @@ Then open <http://maw3idy.localhost:8000> and register a business. Tenants live 
 subdomains, e.g. <http://demo.maw3idy.localhost:8000>; `*.localhost` resolves to the loopback
 address in every modern browser, so no hosts-file entries are needed.
 
-`composer fresh` seeds two demo tenants you can sign in to with the password `password`:
+`composer fresh` seeds two demo tenants, each with services, staff, weekly hours and a few
+upcoming bookings. Sign in with the password `password`, or book as a customer on `/book`:
 
-| Tenant | URL | Owner |
-|--------|-----|-------|
-| Demo Salon (English) | `demo.maw3idy.localhost:8000` | `owner@demo.test` |
-| صالون الجمال (Arabic, RTL) | `jamal.maw3idy.localhost:8000` | `owner@jamal.test` |
+| Tenant | Dashboard | Public booking page | Owner |
+|--------|-----------|---------------------|-------|
+| Demo Salon (English) | `demo.maw3idy.localhost:8000` | `demo.maw3idy.localhost:8000/book` | `owner@demo.test` |
+| صالون الجمال (Arabic, RTL) | `jamal.maw3idy.localhost:8000` | `jamal.maw3idy.localhost:8000/book` | `owner@jamal.test` |
+
+The test suite has three parts: `Unit` (the availability engine runs without a database),
+`Feature` (HTTP and Livewire, each test in a rolled-back transaction) and `Concurrency`
+(separate PHP processes fired at the same slot against committed data). `composer test` runs
+all three.
 
 Quality gates — the same ones CI runs:
 
@@ -132,6 +139,45 @@ route-model bindings all resolve inside the tenant scope. Livewire's update endp
 re-registered on the tenant domain with the same middleware; otherwise component
 re-hydration would run tenantless and fail closed. The tenant is forgotten in the
 middleware's `terminate()` so nothing outlives its request.
+
+**ADR-010 · The availability engine is pure (2026-09-16).** `SlotGenerator` takes data and
+returns data: a request (day, timezone, duration, buffer, grid interval) and a staff
+member's calendar (weekly hours, absences, existing bookings) in, UTC periods out. No
+queries, no clock of its own, no tenant lookup. Every hard case (split shifts, closing-time
+fit, back-to-back with and without buffers, overnight spill-over, "now", DST days) is a unit
+test that runs in milliseconds without a database, and `AvailabilityService` is the single
+seam where Eloquent enters. The cost is a handful of small value objects (`Period`,
+`WorkingHours`, `SlotRequest`, `StaffCalendar`); the gain is that the centrepiece of the
+product is its most tested and least coupled code.
+
+**ADR-011 · Double-booking guard: lock, re-check, insert, with a unique index as backstop
+(2026-09-16).** Two customers can pick the same slot at the same second. `CreateBooking`
+runs one transaction: `SELECT … FOR UPDATE` on the staff member's row serialises every
+attempt for that person; availability is then re-checked reading existing bookings with
+`FOR UPDATE` as well, because under MySQL's default REPEATABLE READ a plain `SELECT` may
+return the snapshot taken before the lock was granted; only then is the row inserted. A
+unique index on `(staff_id, starts_at, slot_lock)` remains as the last line of defence
+(`slot_lock` is `NULL` for cancelled bookings, so cancelled slots reopen), and its violation
+is translated into the same `SlotUnavailableException`. The index alone would not do: it
+cannot see two bookings with different starts that overlap. "Anyone available" resolves the
+candidates first and locks them in id order so concurrent requests cannot deadlock. The
+`Concurrency` test suite proves it with separate PHP processes released at the same
+millisecond: exactly one wins.
+
+**ADR-012 · Time model: UTC instants inside, tenant-local calendar at the edges
+(2026-09-16).** Weekly hours are local clock times per weekday (a salon opens at 09:00
+whether or not the clocks changed), bookings and time off are UTC instants, and a "day" for
+availability is a calendar date in the tenant's timezone. Eloquent's datetime cast formats a
+Carbon instance in *its own* timezone, which silently stores local times as UTC; a
+`UtcDateTime` cast converts on every write so that mistake cannot be made. Buffer semantics
+are deliberate and tested: the service must fit within working hours, its buffer may spill
+past closing or into time off, but neither the service nor its buffer may touch another
+booking or that booking's buffer.
+
+**ADR-013 · Bookings snapshot the service (2026-09-16).** Duration, buffer and price are
+copied onto the booking. Renaming, repricing or shortening a service afterwards changes
+future offers but never rewrites what a customer already agreed to, and the availability
+engine keeps blocking the time that was actually promised.
 
 ## Security baseline
 

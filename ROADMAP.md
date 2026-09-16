@@ -58,27 +58,35 @@ Deferred from this phase: cross-subdomain auto-login after registration (signed 
 
 ---
 
-## Phase 2 — Week 2: Booking domain
+## Phase 2 — Week 2: Booking domain ✅
 
 ### Data model
-- [ ] `services`: name, duration_minutes, price, buffer_after_minutes, active
-- [ ] `staff`: name, email; pivot `service_staff`
-- [ ] `schedules`: staff working hours per weekday (start, end)
-- [ ] `time_off`: staff date ranges (vacations, breaks)
-- [ ] `bookings`: service, staff, customer_name, customer_phone, starts_at (UTC), ends_at, status (confirmed/cancelled), cancel_token
+- [x] `services`: name, description, duration_minutes, price, buffer_after_minutes, active
+- [x] `staff`: name, email, active, optional user link; pivot `service_staff`
+- [x] `schedules`: staff working hours per ISO weekday (start, end as local times)
+- [x] `time_off`: staff UTC ranges (vacations, breaks) with a reason
+- [x] `bookings`: service, staff, customer_name/phone/email, starts_at/ends_at (UTC via `UtcDateTime` cast), snapshot of duration/buffer/price, status (confirmed/cancelled), reference, cancel_token, `slot_lock` for the unique index
+- [x] Every model tenant-scoped (architecture test), MariaDB-safe `DATETIME` columns
 
 ### Availability engine — the centerpiece
-- [ ] Pure class `SlotGenerator::for(Service, Staff, CarbonDate): Collection` — no DB calls inside; takes schedules, time off and existing bookings as input
-- [ ] Handles: working hours, service duration + buffer, overlaps, time off, "no slots in the past", tenant timezone
-- [ ] Unit-test it exhaustively (edge cases: booking at closing time, back-to-back with buffer, DST transition day, empty schedule)
-- [ ] Target: this class alone at ~100% coverage
+- [x] Pure `SlotGenerator::generate(SlotRequest, StaffCalendar): Collection<Period>` — no DB, no clock, no tenant lookup; `AvailabilityService` is the single Eloquent seam
+- [x] Handles: working hours (incl. split shifts), service duration + buffer, overlaps, time off, "no slots in the past", tenant timezone, configurable grid interval
+- [x] Unit-tested exhaustively: closing-time fit, buffer spilling past closing, back-to-back with and without buffer, existing booking's buffer, overnight spill-over, whole-day absence, "now" boundary, DST spring-forward/fall-back days, swallowed DST block, invalid inputs
+- [x] Target ~100% coverage on the engine (26 unit cases; measured in Phase 4's coverage gate)
 
 ### Public booking flow (no auth)
-- [ ] `{tenant}.maw3idy.test/book`: service → staff (or "any") → date → slot grid → name + phone → confirm
-- [ ] Double-booking guard: unique constraint + row lock inside a transaction (test it with two concurrent requests)
-- [ ] Confirmation page with booking reference
+- [x] `{tenant}.maw3idy.localhost/book`: service → staff (or "anyone available") → date → slot grid → name + phone (+ optional email) → confirm; every id and time re-validated server-side; phone normalisation incl. Arabic-Indic digits; per-IP rate limit
+- [x] Double-booking guard: staff row lock + locking re-check + insert, unique index as backstop (ADR-011); tested with a unique-index race simulation **and** a `Concurrency` suite that fires 3–4 real PHP processes at the same slot
+- [x] Confirmation page with booking reference, read from the session so no URL exposes customer data
+
+### Dashboard (added to make the flow usable end to end)
+- [x] Services: list for everyone, owner adds/edits/hides, assigns staff (foreign ids rejected)
+- [x] Staff: list with links to each member's hours, owner adds/edits/deactivates, assigns services
+- [x] Hours & time off per staff member: one block per weekday in the UI (engine supports more), time off entered in tenant time and stored as UTC; route model binding is tenant-scoped (foreign staff id → 404)
 
 **Done when:** end-to-end booking works and `SlotGenerator` tests read like documentation.
+
+Deferred from this phase: minimum notice / lead time before a slot, multiple blocks per weekday in the UI, gap-filling slots that start at the end of a blocker instead of on the grid, customer-facing cancel/reschedule (Phase 3).
 
 ---
 
