@@ -27,8 +27,13 @@ final class AvailabilityService
      *
      * @return Collection<int, AvailableSlot>
      */
-    public function slotsFor(Service $service, CarbonImmutable|string $date, ?Staff $staff = null, bool $forUpdate = false): Collection
-    {
+    public function slotsFor(
+        Service $service,
+        CarbonImmutable|string $date,
+        ?Staff $staff = null,
+        bool $forUpdate = false,
+        ?Booking $excluding = null,
+    ): Collection {
         $timezone = tenant()->timezone;
         $interval = config('booking.slot_interval_minutes');
 
@@ -44,7 +49,7 @@ final class AvailabilityService
         $merged = new Collection;
 
         foreach ($this->staffFor($service, $staff) as $member) {
-            $slots = $this->generator->generate($request, $this->calendarFor($member, $request, $forUpdate));
+            $slots = $this->generator->generate($request, $this->calendarFor($member, $request, $forUpdate, $excluding));
 
             foreach ($slots as $slot) {
                 $key = $slot->start->getTimestamp();
@@ -65,12 +70,20 @@ final class AvailabilityService
      * inside the booking transaction that guarantees the latest committed rows
      * are seen even under REPEATABLE READ, where a plain SELECT could otherwise
      * return the snapshot taken before the staff lock was acquired.
+     *
+     * $excluding leaves one booking out of the calendar, which is what lets a
+     * booking be moved to a time that overlaps where it currently sits.
      */
-    public function isAvailable(Service $service, Staff $staff, CarbonImmutable $start, bool $forUpdate = false): bool
-    {
+    public function isAvailable(
+        Service $service,
+        Staff $staff,
+        CarbonImmutable $start,
+        bool $forUpdate = false,
+        ?Booking $excluding = null,
+    ): bool {
         $day = $start->setTimezone(tenant()->timezone)->toDateString();
 
-        return $this->slotsFor($service, $day, $staff, $forUpdate)
+        return $this->slotsFor($service, $day, $staff, $forUpdate, $excluding)
             ->contains(fn (AvailableSlot $slot) => $slot->start()->equalTo($start));
     }
 
@@ -88,8 +101,12 @@ final class AvailabilityService
         return $query->with('schedules')->get();
     }
 
-    private function calendarFor(Staff $staff, SlotRequest $request, bool $forUpdate = false): StaffCalendar
-    {
+    private function calendarFor(
+        Staff $staff,
+        SlotRequest $request,
+        bool $forUpdate = false,
+        ?Booking $excluding = null,
+    ): StaffCalendar {
         // The local day as a UTC window, padded so bookings and absences that start the
         // day before but spill over (including their buffers) are still considered.
         $dayStart = CarbonImmutable::parse($request->day, $request->timezone)->startOfDay()->utc();
@@ -110,6 +127,7 @@ final class AvailabilityService
             ->where('staff_id', $staff->getKey())
             ->confirmed()
             ->overlapping($windowStart, $windowEnd)
+            ->when($excluding !== null, fn ($query) => $query->whereKeyNot($excluding?->getKey()))
             ->when($forUpdate, fn ($query) => $query->lockForUpdate())
             ->get()
             ->map(fn (Booking $booking) => $booking->blockedPeriod())
