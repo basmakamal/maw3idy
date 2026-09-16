@@ -14,7 +14,8 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT"></a>
 </p>
 
-> **Status:** in development. Phase 0 (repo, CI, hardening baseline) is complete.
+> **Status:** in development. Phase 0 (repo, CI, hardening baseline) and Phase 1
+> (multi-tenancy, registration, tenant-scoped auth, dashboard shell) are complete.
 > Progress is tracked in [`ROADMAP.md`](ROADMAP.md); each phase lands as a pull request.
 
 ---
@@ -28,6 +29,17 @@ mysql -uroot -e "CREATE DATABASE maw3idy; CREATE DATABASE maw3idy_test;"
 composer setup   # install, .env, app key, migrate, build assets
 composer dev     # server + queue worker + logs + Vite, in one terminal
 ```
+
+Then open <http://maw3idy.localhost:8000> and register a business. Tenants live on
+subdomains, e.g. <http://demo.maw3idy.localhost:8000>; `*.localhost` resolves to the loopback
+address in every modern browser, so no hosts-file entries are needed.
+
+`composer fresh` seeds two demo tenants you can sign in to with the password `password`:
+
+| Tenant | URL | Owner |
+|--------|-----|-------|
+| Demo Salon (English) | `demo.maw3idy.localhost:8000` | `owner@demo.test` |
+| صالون الجمال (Arabic, RTL) | `jamal.maw3idy.localhost:8000` | `owner@jamal.test` |
 
 Quality gates — the same ones CI runs:
 
@@ -79,6 +91,47 @@ that bug class into a non-issue.
 in local/testing: lazy loading, missing attributes and silently discarded fills throw, so
 the test suite catches them. In production the same code degrades gracefully. Destructive
 database commands are prohibited in production.
+
+**ADR-006 · One database, a `tenant_id` on every row (2026-09-16).** Database-per-tenant
+buys physical isolation and per-tenant restore at the price of N migrations, N backups, N
+connection pools and a tenant-aware migrator on every deploy. For a product whose tenants
+are salons with hundreds of rows each, that is the wrong trade: a single schema with
+`tenant_id` costs one migration run, one backup, and lets the platform do cross-tenant
+reporting with a plain query. Isolation becomes an application invariant instead of a
+physical one, so it is enforced in three layers: a global scope on every tenant-owned model
+(`BelongsToTenant`), write guards that throw on any cross-tenant create or move
+(`TenantMismatchException`), and an architecture test that fails the build if a model in
+`App\Models` forgets the trait. Composite unique indexes (`tenant_id, email`) keep
+uniqueness per tenant. Choose the opposite when a regulator demands data residency per
+customer, when one tenant is large enough to need its own scaling and restore story, or
+when tenants need schema customisation.
+
+**ADR-007 · Fail closed when no tenant is bound (2026-09-16).** Querying a tenant-owned
+model with no tenant in context throws `TenantNotBoundException`. Returning every tenant's
+rows would be a data leak; returning none would hide bugs as empty screens. Cross-tenant
+work is therefore explicit and greppable: `TenantContext::runAs($tenant, fn)` for acting on
+behalf of one tenant (registration, jobs, the reminder scheduler), `Model::withoutTenancy()`
+for a deliberate global query. Console commands and jobs must declare their tenant, which
+is a feature.
+
+**ADR-008 · Subdomain per tenant, host-only sessions (2026-09-16).** The tenant is read
+from the host (`acme.maw3idy.test`) by a `TenantResolver` strategy, so the API can later
+bind a header- or token-based resolver without touching the middleware. Session cookies
+stay host-only (no leading-dot `SESSION_DOMAIN`): a session created on one tenant is never
+even presented to another. Should a shared cookie ever arrive, the user provider looks the
+session's user up inside the tenant scope and finds nothing. Registration happens on the
+central domain and hands off to the tenant's own login page rather than auto-signing in
+across subdomains, which would need a signed single-use token; that polish is deferred.
+Locally `*.localhost` gives zero-config subdomains; production needs a wildcard DNS record
+and a wildcard certificate.
+
+**ADR-009 · Tenant identification runs before authentication (2026-09-16).**
+`IdentifyTenant` is prepended to the middleware priority list ahead of `Authenticate`,
+`ThrottleRequests` and `SubstituteBindings`, so the session user, rate-limit keys and
+route-model bindings all resolve inside the tenant scope. Livewire's update endpoint is
+re-registered on the tenant domain with the same middleware; otherwise component
+re-hydration would run tenantless and fail closed. The tenant is forgotten in the
+middleware's `terminate()` so nothing outlives its request.
 
 ## Security baseline
 
