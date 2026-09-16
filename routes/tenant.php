@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Booking\BookingConfirmationController;
+use App\Http\Controllers\Dashboard\StaffScheduleController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -37,6 +38,7 @@ Route::middleware('auth')->group(function () {
     Route::view('/dashboard', 'dashboard.index')->name('dashboard');
     Route::view('/services', 'dashboard.services')->name('services');
     Route::view('/staff', 'dashboard.staff')->name('staff');
+    Route::get('/staff/{staff}/schedule', StaffScheduleController::class)->name('staff.schedule');
     Route::view('/calendar', 'dashboard.calendar')->name('calendar');
     Route::view('/settings', 'dashboard.settings')->name('settings');
 });
