@@ -20,7 +20,7 @@ it('renders each dashboard page for a signed-in user', function (string $path, s
     'dashboard' => ['/dashboard', 'Get set up'],
     'services' => ['/services', 'No services yet'],
     'staff' => ['/staff', 'No staff yet'],
-    'calendar' => ['/calendar', 'Nothing scheduled'],
+    'calendar' => ['/calendar', 'Show cancelled'],
 ]);
 
 it('sends guests to the tenant login page', function (string $path) {
