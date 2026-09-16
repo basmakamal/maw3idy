@@ -1,17 +1,15 @@
 <?php
 
+use App\Models\Tenant;
+use App\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
 /*
 |--------------------------------------------------------------------------
 | Test Case
 |--------------------------------------------------------------------------
-|
-| The closure you provide to your test functions is always bound to a specific PHPUnit test
-| case class. By default, that class is "PHPUnit\Framework\TestCase". Of course, you may
-| need to change it using the "pest()" function to bind a different classes or traits.
-|
 */
 
 pest()->extend(TestCase::class)
@@ -20,31 +18,36 @@ pest()->extend(TestCase::class)
 
 /*
 |--------------------------------------------------------------------------
-| Expectations
+| Tenancy helpers
 |--------------------------------------------------------------------------
 |
-| When you're writing tests, you often need to check that values meet certain conditions. The
-| "expect()" function gives you access to a set of "expectations" methods that you can use
-| to assert different things. Of course, you may extend the Expectation API at any time.
+| Feature tests address tenants the way browsers do: by host. These helpers
+| build the right URLs and bind a tenant when a test exercises the domain
+| layer directly instead of going through the IdentifyTenant middleware.
 |
 */
 
-expect()->extend('toBeOne', function () {
-    return $this->toBe(1);
-});
-
-/*
-|--------------------------------------------------------------------------
-| Functions
-|--------------------------------------------------------------------------
-|
-| While Pest is very powerful out-of-the-box, you may have some testing code specific to your
-| project that you don't want to repeat in every file. Here you can also expose helpers as
-| global functions to help you to reduce the number of lines of code in your test files.
-|
-*/
-
-function something()
+function centralUrl(string $path = '/'): string
 {
-    // ..
+    return 'http://'.config('tenancy.central_domain').'/'.ltrim($path, '/');
+}
+
+function tenantUrl(Tenant $tenant, string $path = '/'): string
+{
+    return 'http://'.$tenant->slug.'.'.config('tenancy.central_domain').'/'.ltrim($path, '/');
+}
+
+/**
+ * Bind a tenant the way a real request on its subdomain would, for tests that
+ * bypass HTTP (domain code, Livewire component tests): tenant in the container,
+ * route() defaults, and the tenant host as the root for relative URLs (Livewire's
+ * test harness posts updates to a relative /livewire/update).
+ */
+function bindTenant(Tenant $tenant): Tenant
+{
+    app(TenantContext::class)->set($tenant);
+    URL::defaults(['tenant' => $tenant->slug]);
+    URL::forceRootUrl('http://'.$tenant->domain());
+
+    return $tenant;
 }

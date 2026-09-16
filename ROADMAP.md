@@ -28,28 +28,33 @@ Check items off as you go — this file lives in the repo root so the roadmap it
 
 ---
 
-## Phase 1 — Week 1: Multi-tenancy foundation
+## Phase 1 — Week 1: Multi-tenancy foundation ✅
 
 ### Tenancy core
-- [ ] `tenants` table: id, name, slug (subdomain), timezone, locale, settings JSON
-- [ ] Subdomain routing: `{tenant}.maw3idy.test` → middleware resolves tenant, binds it to the container
-- [ ] `BelongsToTenant` trait: global scope on `tenant_id` + auto-fill on create
-- [ ] Central domain (`maw3idy.test`) serves the landing + registration only
+- [x] `tenants` table: id, name, slug (subdomain), timezone, locale, settings JSON
+- [x] Subdomain routing: `{tenant}.maw3idy.localhost` → `IdentifyTenant` resolves via a `TenantResolver` strategy, binds `TenantContext` (scoped singleton), sets locale and route defaults, forgets it on terminate
+- [x] `BelongsToTenant` trait: fail-closed global scope on `tenant_id` + auto-fill on create + write guards (`TenantMismatchException` on cross-tenant create or move)
+- [x] Central domain (`maw3idy.localhost`) serves the landing + registration only; nothing is routed without a domain
+- [x] Tenant identification ordered before authentication / bindings in the middleware priority list
+- [x] Livewire update endpoint re-registered on the tenant domain behind `IdentifyTenant`
 
 ### Auth & onboarding
-- [ ] Owner registration on central domain → creates tenant + first user → redirects to subdomain
-- [ ] Login scoped per tenant (user of tenant A cannot log in on tenant B's subdomain)
-- [ ] Dashboard shell (Livewire + Tailwind): sidebar, empty pages for Services / Staff / Calendar / Settings
+- [x] Owner registration on central domain → `RegisterTenant` action (transaction, DTO, `TenantRegistered` event) → redirects to the tenant login page; reserved + malformed subdomains rejected, per-IP rate limit
+- [x] Login scoped per tenant (user of tenant A cannot log in on tenant B's subdomain); per-account + per-IP throttling, session regeneration, host-only cookies
+- [x] Dashboard shell (Livewire + Tailwind, RTL-aware): sidebar, empty states for Services / Staff / Calendar, working owner-only Settings page (name, timezone, language) behind `TenantPolicy`
 
 ### Tests (the ones that matter most)
-- [ ] `tenant_a_cannot_see_tenant_b_data` — query isolation
-- [ ] `tenant_a_user_cannot_authenticate_on_tenant_b_subdomain`
-- [ ] `new_records_are_automatically_scoped_to_current_tenant`
+- [x] `tenant A cannot see tenant B data` — query isolation
+- [x] `tenant A user cannot authenticate on tenant B subdomain`
+- [x] `scopes new records to the current tenant automatically`
+- [x] Plus: fail-closed without a tenant, `withoutTenancy()` escape hatch, `runAs()` restore semantics, session replay across tenants, subdomain parsing edge cases, architecture rule "every model is tenant scoped unless explicitly central"
 
 ### README
-- [ ] "Architecture decisions" section: why single-DB + tenant_id over DB-per-tenant (cost, ops simplicity, migration story) — and when you'd choose the opposite
+- [x] ADR-006 single-DB + `tenant_id` vs DB-per-tenant (and when to choose the opposite), ADR-007 fail-closed scope, ADR-008 subdomains + host-only sessions, ADR-009 middleware ordering
 
 **Done when:** two tenants registered, fully isolated, CI proves it.
+
+Deferred from this phase: cross-subdomain auto-login after registration (signed single-use handoff token), password reset (the `password_reset_tokens` table is keyed by email and must become tenant-aware first), email verification.
 
 ---
 
