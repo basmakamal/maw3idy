@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Booking\BookingConfirmationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -15,6 +16,12 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::redirect('/', '/dashboard')->name('home');
+
+/*
+| Public booking page: no account needed.
+*/
+Route::view('/book', 'booking.book')->name('book');
+Route::get('/book/confirmed', BookingConfirmationController::class)->name('book.confirmed');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
