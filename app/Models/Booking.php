@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\URL;
 
 /**
  * A confirmed (or cancelled) appointment. Times are UTC instants; the service's
@@ -35,6 +36,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $cancel_token
  * @property CarbonImmutable|null $cancelled_at
  * @property string|null $cancellation_reason
+ * @property CarbonImmutable|null $reminder_sent_at
  */
 class Booking extends Model
 {
@@ -67,6 +69,7 @@ class Booking extends Model
             'status' => BookingStatus::class,
             'slot_lock' => 'boolean',
             'cancelled_at' => UtcDateTime::class,
+            'reminder_sent_at' => UtcDateTime::class,
         ];
     }
 
@@ -107,6 +110,19 @@ class Booking extends Model
     public function isConfirmed(): bool
     {
         return $this->status === BookingStatus::Confirmed;
+    }
+
+    /**
+     * The customer's own link to this booking: a signed URL carrying the
+     * booking's secret token (ADR-016). Built with the tenant spelled out, so
+     * it also works from a queue worker where no request set URL defaults.
+     */
+    public function manageUrl(): string
+    {
+        return URL::signedRoute('tenant.booking.manage', [
+            'tenant' => $this->tenant->slug,
+            'token' => $this->cancel_token,
+        ]);
     }
 
     /**
