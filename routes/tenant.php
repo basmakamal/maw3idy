@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Booking\BookingConfirmationController;
 use App\Http\Controllers\Booking\ManageBookingController;
 use App\Http\Controllers\Dashboard\StaffScheduleController;
+use App\Http\Controllers\LocaleController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,6 +19,8 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::redirect('/', '/dashboard')->name('home');
+
+Route::post('/locale', LocaleController::class)->name('locale');
 
 /*
 | Public booking page: no account needed.

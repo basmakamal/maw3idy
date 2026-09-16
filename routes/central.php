@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Central\RegisterTenantController;
+use App\Http\Controllers\LocaleController;
+use App\Http\Middleware\ApplyPreferredLocale;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -13,9 +15,13 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::view('/', 'central.landing')->name('home');
+Route::middleware(ApplyPreferredLocale::class)->group(function () {
+    Route::view('/', 'central.landing')->name('home');
 
-Route::get('/register', [RegisterTenantController::class, 'create'])->name('register');
-Route::post('/register', [RegisterTenantController::class, 'store'])
-    ->middleware('throttle:registration')
-    ->name('register.store');
+    Route::get('/register', [RegisterTenantController::class, 'create'])->name('register');
+    Route::post('/register', [RegisterTenantController::class, 'store'])
+        ->middleware('throttle:registration')
+        ->name('register.store');
+});
+
+Route::post('/locale', LocaleController::class)->name('locale');

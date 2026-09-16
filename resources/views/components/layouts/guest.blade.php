@@ -19,6 +19,10 @@
         <main class="rounded-2xl border border-stone-200 bg-white p-8 shadow-sm">
             {{ $slot }}
         </main>
+
+        <div class="mt-6 flex justify-center">
+            <x-language-switcher :route="request()->routeIs('tenant.*') ? 'tenant.locale' : 'central.locale'" />
+        </div>
     </div>
 </body>
 </html>
