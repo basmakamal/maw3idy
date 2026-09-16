@@ -34,7 +34,7 @@
             <li class="rounded-2xl border border-stone-200 bg-white p-5">
                 <p class="text-sm font-semibold">3. {{ __('Share your booking page') }}</p>
                 <p class="mt-1 text-sm text-stone-600">{{ __('Customers pick a service, a time and confirm. You get notified.') }}</p>
-                <p class="mt-3 text-sm text-stone-400">{{ __('Available after phase 2') }}</p>
+                <a href="{{ route('tenant.book') }}" target="_blank" rel="noopener" class="mt-3 inline-block text-sm font-medium text-teal-700 hover:text-teal-900" dir="ltr">{{ route('tenant.book') }} ↗</a>
             </li>
         </ol>
     </section>

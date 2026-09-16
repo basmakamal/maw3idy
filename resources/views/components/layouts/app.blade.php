@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700|tajawal:400,500,700" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @livewireStyles
 </head>
 <body class="min-h-full font-sans text-stone-900 antialiased">
     <div class="flex min-h-screen">
@@ -44,5 +45,6 @@
             </main>
         </div>
     </div>
+    @livewireScripts
 </body>
 </html>
