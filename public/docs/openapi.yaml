@@ -2046,12 +2046,12 @@ paths:
       -
         in: path
         name: reference
-        description: ''
+        description: 'The booking reference, as returned when it was created.'
         required: true
         schema:
-          type: integer
+          type: string
           examples:
-            - 7
+            - MW-7K3P9Q
       -
         in: path
         name: tenant
@@ -2061,15 +2061,6 @@ paths:
           type: string
           examples:
             - demo
-      -
-        in: path
-        name: booking
-        description: 'The booking reference.'
-        required: true
-        schema:
-          type: string
-          examples:
-            - MW-7K3P9Q
   /api/v1/services:
     get:
       summary: 'List bookable services'

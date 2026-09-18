@@ -243,20 +243,14 @@
                                 {
                                     "id": "reference",
                                     "key": "reference",
-                                    "value": 7,
-                                    "description": ""
+                                    "value": "MW-7K3P9Q",
+                                    "description": "The booking reference, as returned when it was created."
                                 },
                                 {
                                     "id": "tenant",
                                     "key": "tenant",
                                     "value": "demo",
                                     "description": "The business's subdomain."
-                                },
-                                {
-                                    "id": "booking",
-                                    "key": "booking",
-                                    "value": "MW-7K3P9Q",
-                                    "description": "The booking reference."
                                 }
                             ]
                         },
@@ -310,20 +304,14 @@
                                 {
                                     "id": "reference",
                                     "key": "reference",
-                                    "value": 7,
-                                    "description": ""
+                                    "value": "MW-7K3P9Q",
+                                    "description": "The booking reference, as returned when it was created."
                                 },
                                 {
                                     "id": "tenant",
                                     "key": "tenant",
                                     "value": "demo",
                                     "description": "The business's subdomain."
-                                },
-                                {
-                                    "id": "booking",
-                                    "key": "booking",
-                                    "value": "MW-7K3P9Q",
-                                    "description": "The booking reference."
                                 }
                             ]
                         },

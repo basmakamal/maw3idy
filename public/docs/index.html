@@ -906,7 +906,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request GET \
-    --get "http://demo.maw3idy.localhost:8000/api/v1/bookings/7" \
+    --get "http://demo.maw3idy.localhost:8000/api/v1/bookings/MW-7K3P9Q" \
     --header "Authorization: Bearer {YOUR_AUTH_KEY}" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json"</code></pre></div>
@@ -914,7 +914,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://demo.maw3idy.localhost:8000/api/v1/bookings/7"
+    "http://demo.maw3idy.localhost:8000/api/v1/bookings/MW-7K3P9Q"
 );
 
 const headers = {
@@ -1395,15 +1395,15 @@ You can check the Dev Tools console for debugging information.</code></pre>
                         <h4 class="fancy-heading-panel"><b>URL Parameters</b></h4>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>reference</code></b>&nbsp;&nbsp;
-<small>integer</small>&nbsp;
+<small>string</small>&nbsp;
  &nbsp;
  &nbsp;
-                <input type="number" style="display: none"
-               step="any"               name="reference"                data-endpoint="GETapi-v1-bookings--reference-"
-               value="7"
+                <input type="text" style="display: none"
+                              name="reference"                data-endpoint="GETapi-v1-bookings--reference-"
+               value="MW-7K3P9Q"
                data-component="url">
     <br>
-<p>Example: <code>7</code></p>
+<p>The booking reference, as returned when it was created. Example: <code>MW-7K3P9Q</code></p>
             </div>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>tenant</code></b>&nbsp;&nbsp;
@@ -1416,18 +1416,6 @@ You can check the Dev Tools console for debugging information.</code></pre>
                data-component="url">
     <br>
 <p>The business's subdomain. Example: <code>demo</code></p>
-            </div>
-                    <div style="padding-left: 28px; clear: unset;">
-                <b style="line-height: 2;"><code>booking</code></b>&nbsp;&nbsp;
-<small>string</small>&nbsp;
- &nbsp;
- &nbsp;
-                <input type="text" style="display: none"
-                              name="booking"                data-endpoint="GETapi-v1-bookings--reference-"
-               value="MW-7K3P9Q"
-               data-component="url">
-    <br>
-<p>The booking reference. Example: <code>MW-7K3P9Q</code></p>
             </div>
                     </form>
 
@@ -1447,7 +1435,7 @@ held to the customer notice period.</p>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request DELETE \
-    "http://demo.maw3idy.localhost:8000/api/v1/bookings/7" \
+    "http://demo.maw3idy.localhost:8000/api/v1/bookings/MW-7K3P9Q" \
     --header "Authorization: Bearer {YOUR_AUTH_KEY}" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
@@ -1459,7 +1447,7 @@ held to the customer notice period.</p>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://demo.maw3idy.localhost:8000/api/v1/bookings/7"
+    "http://demo.maw3idy.localhost:8000/api/v1/bookings/MW-7K3P9Q"
 );
 
 const headers = {
@@ -1944,15 +1932,15 @@ You can check the Dev Tools console for debugging information.</code></pre>
                         <h4 class="fancy-heading-panel"><b>URL Parameters</b></h4>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>reference</code></b>&nbsp;&nbsp;
-<small>integer</small>&nbsp;
+<small>string</small>&nbsp;
  &nbsp;
  &nbsp;
-                <input type="number" style="display: none"
-               step="any"               name="reference"                data-endpoint="DELETEapi-v1-bookings--reference-"
-               value="7"
+                <input type="text" style="display: none"
+                              name="reference"                data-endpoint="DELETEapi-v1-bookings--reference-"
+               value="MW-7K3P9Q"
                data-component="url">
     <br>
-<p>Example: <code>7</code></p>
+<p>The booking reference, as returned when it was created. Example: <code>MW-7K3P9Q</code></p>
             </div>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>tenant</code></b>&nbsp;&nbsp;
@@ -1965,18 +1953,6 @@ You can check the Dev Tools console for debugging information.</code></pre>
                data-component="url">
     <br>
 <p>The business's subdomain. Example: <code>demo</code></p>
-            </div>
-                    <div style="padding-left: 28px; clear: unset;">
-                <b style="line-height: 2;"><code>booking</code></b>&nbsp;&nbsp;
-<small>string</small>&nbsp;
- &nbsp;
- &nbsp;
-                <input type="text" style="display: none"
-                              name="booking"                data-endpoint="DELETEapi-v1-bookings--reference-"
-               value="MW-7K3P9Q"
-               data-component="url">
-    <br>
-<p>The booking reference. Example: <code>MW-7K3P9Q</code></p>
             </div>
                             <h4 class="fancy-heading-panel"><b>Body Parameters</b></h4>
         <div style=" padding-left: 28px;  clear: unset;">

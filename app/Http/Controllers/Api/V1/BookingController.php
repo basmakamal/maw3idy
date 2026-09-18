@@ -125,7 +125,7 @@ final class BookingController extends Controller
      *
      * Needs the `bookings:read` ability.
      */
-    #[UrlParam('booking', 'string', 'The booking reference.', example: 'MW-7K3P9Q')]
+    #[UrlParam('reference', 'string', 'The booking reference, as returned when it was created.', example: 'MW-7K3P9Q')]
     #[Response(content: ['message' => 'Not Found'], status: 404, description: 'No such booking at this business.')]
     public function show(Request $request, Booking $booking): BookingResource
     {
@@ -142,7 +142,7 @@ final class BookingController extends Controller
      * immediately bookable again and the customer is notified. Staff are not
      * held to the customer notice period.
      */
-    #[UrlParam('booking', 'string', 'The booking reference.', example: 'MW-7K3P9Q')]
+    #[UrlParam('reference', 'string', 'The booking reference, as returned when it was created.', example: 'MW-7K3P9Q')]
     #[Response(content: ['message' => 'This booking has already been cancelled.'], status: 422, description: 'Already cancelled, or in the past.')]
     public function destroy(CancelBookingRequest $request, Booking $booking, CancelBooking $cancelBooking): BookingResource
     {
