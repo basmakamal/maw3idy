@@ -28,6 +28,31 @@ final class IssueTokenRequest extends FormRequest
     }
 
     /**
+     * Documentation for the generated API reference.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public function bodyParameters(): array
+    {
+        return [
+            'email' => ['description' => 'A staff account at this business.', 'example' => 'owner@demo.test'],
+            'password' => ['description' => 'That account\'s password.', 'example' => 'password'],
+            'device_name' => ['description' => 'What this token is for. Shown when reviewing tokens.', 'example' => 'Front desk iPad'],
+            'abilities' => [
+                'description' => 'What the token may do. Any of `services:read`, `bookings:read`, `bookings:write`. Defaults to the two read abilities.',
+                'example' => ['bookings:write'],
+            ],
+            // The item example is pinned too: without it the `in` rule makes
+            // the generator pick an allowed value at random, and the committed
+            // reference would differ on every regeneration.
+            'abilities.*' => [
+                'description' => 'One ability.',
+                'example' => 'bookings:write',
+            ],
+        ];
+    }
+
+    /**
      * Least privilege by default: a caller that asks for nothing gets read
      * access only, and must say so explicitly to be able to write.
      *

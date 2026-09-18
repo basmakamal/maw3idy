@@ -47,6 +47,23 @@ final class StoreBookingRequest extends FormRequest
         ];
     }
 
+    /**
+     * Documentation for the generated API reference.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public function bodyParameters(): array
+    {
+        return [
+            'service_id' => ['description' => 'A bookable service at this business.', 'example' => 1],
+            'staff_id' => ['description' => 'Who should take it. Omit for anyone available.', 'example' => 1],
+            'starts_at' => ['description' => 'When the appointment starts. Any offset; stored as UTC.', 'example' => '2026-10-05T07:00:00+00:00'],
+            'customer_name' => ['description' => 'The customer\'s name.', 'example' => 'Layla A.'],
+            'customer_phone' => ['description' => '8 to 15 digits, with or without a country code.', 'example' => '+966501112222'],
+            'customer_email' => ['description' => 'Optional. Without it the customer cannot be emailed a confirmation.', 'example' => 'layla@example.com'],
+        ];
+    }
+
     public function toData(): BookingRequestData
     {
         return new BookingRequestData(

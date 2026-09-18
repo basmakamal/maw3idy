@@ -1,0 +1,2505 @@
+openapi: 3.1.0
+info:
+  title: 'Maw3idy API Documentation'
+  description: "Read a business's services and availability, and create or cancel bookings on its behalf."
+  version: 1.0.0
+servers:
+  -
+    url: 'http://demo.maw3idy.localhost:8000'
+tags:
+  -
+    name: Availability
+    description: 'When a service can be booked. Public, and throttled to 60 requests a minute.'
+  -
+    name: Bookings
+    description: 'Reading the diary and changing it. Needs a token with the matching ability.'
+  -
+    name: Services
+    description: 'What the business offers. Public, and throttled to 60 requests a minute.'
+  -
+    name: Tokens
+    description: 'Getting and giving up API access.'
+components:
+  securitySchemes:
+    default:
+      type: http
+      scheme: bearer
+      description: "Exchange a staff account's credentials for a token with <code>POST /api/v1/tokens</code>. A token belongs to one business: it only works on that business's own subdomain, and only for the abilities it was issued with."
+security:
+  -
+    default: []
+paths:
+  '/api/v1/services/{service_id}/availability':
+    get:
+      summary: 'Start times for a day'
+      operationId: startTimesForADay
+      description: "Returns the start times a customer could actually take: inside the\nstaff's working hours, clear of existing bookings and their buffers,\nclear of time off, and in the future. Each slot lists the staff who\ncould take it, so \"anyone available\" is one request, not one per person.\n\nA slot can disappear between this call and a booking; creating a booking\nanswers `409` in that case."
+      parameters:
+        -
+          in: query
+          name: date
+          description: "The day to check, in the business's timezone. Today or later, and within the booking window. Must be a valid date in the format <code>Y-m-d</code>. Must be a date after or equal to <code>2026-09-18</code>. Must be a date before or equal to <code>2026-10-18</code>."
+          required: true
+          schema:
+            type: string
+            description: "The day to check, in the business's timezone. Today or later, and within the booking window. Must be a valid date in the format <code>Y-m-d</code>. Must be a date after or equal to <code>2026-09-18</code>. Must be a date before or equal to <code>2026-10-18</code>."
+            examples:
+              - '2026-10-05'
+        -
+          in: query
+          name: staff_id
+          description: 'Limit the answer to one staff member. Omit to see every time anyone could take. Must match an existing stored value.'
+          required: false
+          schema:
+            type: integer
+            description: 'Limit the answer to one staff member. Omit to see every time anyone could take. Must match an existing stored value.'
+            examples:
+              - 1
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        starts_at:
+                          type: string
+                          examples:
+                            - '2026-10-05T06:00:00+00:00'
+                        ends_at:
+                          type: string
+                          examples:
+                            - '2026-10-05T06:30:00+00:00'
+                        staff_ids:
+                          type: array
+                          items:
+                            type: integer
+                          examples:
+                            -
+                              - 1
+                              - 2
+                    examples:
+                      -
+                        -
+                          starts_at: '2026-10-05T06:00:00+00:00'
+                          ends_at: '2026-10-05T06:30:00+00:00'
+                          staff_ids:
+                            - 1
+                            - 2
+                        -
+                          starts_at: '2026-10-05T06:35:00+00:00'
+                          ends_at: '2026-10-05T07:05:00+00:00'
+                          staff_ids:
+                            - 1
+                  meta:
+                    type: object
+                    properties:
+                      date:
+                        type: string
+                        examples:
+                          - '2026-10-05'
+                      timezone:
+                        type: string
+                        examples:
+                          - Asia/Riyadh
+                      service_id:
+                        type: integer
+                        examples:
+                          - 1
+                      staff_id:
+                        type:
+                          - string
+                          - 'null'
+                        examples:
+                          - null
+                      duration_minutes:
+                        type: integer
+                        examples:
+                          - 30
+                examples:
+                  -
+                    data:
+                      -
+                        starts_at: '2026-10-05T06:00:00+00:00'
+                        ends_at: '2026-10-05T06:30:00+00:00'
+                        staff_ids:
+                          - 1
+                          - 2
+                      -
+                        starts_at: '2026-10-05T06:35:00+00:00'
+                        ends_at: '2026-10-05T07:05:00+00:00'
+                        staff_ids:
+                          - 1
+                    meta:
+                      date: '2026-10-05'
+                      timezone: Asia/Riyadh
+                      service_id: 1
+                      staff_id: null
+                      duration_minutes: 30
+        422:
+          description: 'A missing, malformed or out-of-window date, or a staff member who does not work here.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - 'The date field is required.'
+                  errors:
+                    type: object
+                    properties:
+                      date:
+                        type: array
+                        items:
+                          type: string
+                        examples:
+                          -
+                            - 'The date field is required.'
+                examples:
+                  -
+                    message: 'The date field is required.'
+                    errors:
+                      date:
+                        - 'The date field is required.'
+      tags:
+        - Availability
+      security: []
+    parameters:
+      -
+        in: path
+        name: service_id
+        description: 'The ID of the service.'
+        required: true
+        schema:
+          type: integer
+          examples:
+            - 1
+      -
+        in: path
+        name: tenant
+        description: "The business's subdomain."
+        required: true
+        schema:
+          type: string
+          examples:
+            - demo
+      -
+        in: path
+        name: service
+        description: 'The service id.'
+        required: true
+        schema:
+          type: integer
+          examples:
+            - 1
+  /api/v1/bookings:
+    get:
+      summary: 'List bookings'
+      operationId: listBookings
+      description: 'Needs the `bookings:read` ability. Paginated, oldest appointment first.'
+      parameters:
+        -
+          in: query
+          name: from
+          description: 'Only appointments starting at or after this instant. Must be a valid date.'
+          required: false
+          schema:
+            type: string
+            description: 'Only appointments starting at or after this instant. Must be a valid date.'
+            examples:
+              - '2026-10-05T00:00:00Z'
+        -
+          in: query
+          name: to
+          description: 'Only appointments starting at or before this instant. Must be a valid date. Must be a date after or equal to <code>from</code>.'
+          required: false
+          schema:
+            type: string
+            description: 'Only appointments starting at or before this instant. Must be a valid date. Must be a date after or equal to <code>from</code>.'
+            examples:
+              - '2026-10-12T00:00:00Z'
+        -
+          in: query
+          name: staff_id
+          description: "Only this staff member's appointments."
+          required: false
+          schema:
+            type: integer
+            description: "Only this staff member's appointments."
+            examples:
+              - 1
+        -
+          in: query
+          name: status
+          description: 'Either `confirmed` or `cancelled`.'
+          required: false
+          schema:
+            type: string
+            description: 'Either `confirmed` or `cancelled`.'
+            enum:
+              - confirmed
+              - cancelled
+            examples:
+              - confirmed
+        -
+          in: query
+          name: per_page
+          description: 'Results per page, 1 to 100. Must be at least 1. Must not be greater than 100.'
+          required: false
+          schema:
+            type: integer
+            description: 'Results per page, 1 to 100. Must be at least 1. Must not be greater than 100.'
+            examples:
+              - 25
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        reference:
+                          type: string
+                          examples:
+                            - MW-7K3P9Q
+                        status:
+                          type: string
+                          examples:
+                            - confirmed
+                        starts_at:
+                          type: string
+                          examples:
+                            - '2026-10-05T07:00:00+00:00'
+                        ends_at:
+                          type: string
+                          examples:
+                            - '2026-10-05T07:30:00+00:00'
+                        duration_minutes:
+                          type: integer
+                          examples:
+                            - 30
+                        buffer_after_minutes:
+                          type: integer
+                          examples:
+                            - 5
+                        price:
+                          type: string
+                          examples:
+                            - '80.00'
+                        currency:
+                          type: string
+                          examples:
+                            - SAR
+                        customer:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              examples:
+                                - 'Layla A.'
+                            phone:
+                              type: string
+                              examples:
+                                - '+966501112222'
+                            email:
+                              type:
+                                - string
+                                - 'null'
+                              examples:
+                                - null
+                        cancelled_at:
+                          type:
+                            - string
+                            - 'null'
+                          examples:
+                            - null
+                        cancellation_reason:
+                          type:
+                            - string
+                            - 'null'
+                          examples:
+                            - null
+                        created_at:
+                          type: string
+                          examples:
+                            - '2026-09-28T09:14:00+00:00'
+                    examples:
+                      -
+                        -
+                          reference: MW-7K3P9Q
+                          status: confirmed
+                          starts_at: '2026-10-05T07:00:00+00:00'
+                          ends_at: '2026-10-05T07:30:00+00:00'
+                          duration_minutes: 30
+                          buffer_after_minutes: 5
+                          price: '80.00'
+                          currency: SAR
+                          customer:
+                            name: 'Layla A.'
+                            phone: '+966501112222'
+                            email: null
+                          cancelled_at: null
+                          cancellation_reason: null
+                          created_at: '2026-09-28T09:14:00+00:00'
+                  meta:
+                    type: object
+                    properties:
+                      timezone:
+                        type: string
+                        examples:
+                          - Asia/Riyadh
+                      current_page:
+                        type: integer
+                        examples:
+                          - 1
+                      per_page:
+                        type: integer
+                        examples:
+                          - 25
+                      total:
+                        type: integer
+                        examples:
+                          - 1
+                examples:
+                  -
+                    data:
+                      -
+                        reference: MW-7K3P9Q
+                        status: confirmed
+                        starts_at: '2026-10-05T07:00:00+00:00'
+                        ends_at: '2026-10-05T07:30:00+00:00'
+                        duration_minutes: 30
+                        buffer_after_minutes: 5
+                        price: '80.00'
+                        currency: SAR
+                        customer:
+                          name: 'Layla A.'
+                          phone: '+966501112222'
+                          email: null
+                        cancelled_at: null
+                        cancellation_reason: null
+                        created_at: '2026-09-28T09:14:00+00:00'
+                    meta:
+                      timezone: Asia/Riyadh
+                      current_page: 1
+                      per_page: 25
+                      total: 1
+        403:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - 'This token is not allowed to do that.'
+                examples:
+                  -
+                    message: 'This token is not allowed to do that.'
+      tags:
+        - Bookings
+    post:
+      summary: 'Create a booking'
+      operationId: createABooking
+      description: "Needs the `bookings:write` ability.\n\nOmit `staff_id` to let the platform pick anyone who offers the service\nand is free. The slot is verified again under a lock before the booking\nis written, so two callers racing for the same time cannot both win: the\nloser gets `409`.\n\nThe service's duration, buffer and price are copied onto the booking, so\nlater changes to the service never rewrite an existing appointment."
+      parameters: []
+      responses:
+        201:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      reference:
+                        type: string
+                        examples:
+                          - MW-7K3P9Q
+                      status:
+                        type: string
+                        examples:
+                          - confirmed
+                      starts_at:
+                        type: string
+                        examples:
+                          - '2026-10-05T07:00:00+00:00'
+                      ends_at:
+                        type: string
+                        examples:
+                          - '2026-10-05T07:30:00+00:00'
+                      duration_minutes:
+                        type: integer
+                        examples:
+                          - 30
+                      buffer_after_minutes:
+                        type: integer
+                        examples:
+                          - 5
+                      price:
+                        type: string
+                        examples:
+                          - '80.00'
+                      currency:
+                        type: string
+                        examples:
+                          - SAR
+                      customer:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                            examples:
+                              - 'Layla A.'
+                          phone:
+                            type: string
+                            examples:
+                              - '+966501112222'
+                          email:
+                            type:
+                              - string
+                              - 'null'
+                            examples:
+                              - null
+                      cancelled_at:
+                        type:
+                          - string
+                          - 'null'
+                        examples:
+                          - null
+                      cancellation_reason:
+                        type:
+                          - string
+                          - 'null'
+                        examples:
+                          - null
+                      created_at:
+                        type: string
+                        examples:
+                          - '2026-09-28T09:14:00+00:00'
+                  meta:
+                    type: object
+                    properties:
+                      timezone:
+                        type: string
+                        examples:
+                          - Asia/Riyadh
+                examples:
+                  -
+                    data:
+                      reference: MW-7K3P9Q
+                      status: confirmed
+                      starts_at: '2026-10-05T07:00:00+00:00'
+                      ends_at: '2026-10-05T07:30:00+00:00'
+                      duration_minutes: 30
+                      buffer_after_minutes: 5
+                      price: '80.00'
+                      currency: SAR
+                      customer:
+                        name: 'Layla A.'
+                        phone: '+966501112222'
+                        email: null
+                      cancelled_at: null
+                      cancellation_reason: null
+                      created_at: '2026-09-28T09:14:00+00:00'
+                    meta:
+                      timezone: Asia/Riyadh
+        409:
+          description: 'The time was taken while the caller was deciding.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - 'The slot starting at 2026-10-05T07:00:00+00:00 is no longer available.'
+                examples:
+                  -
+                    message: 'The slot starting at 2026-10-05T07:00:00+00:00 is no longer available.'
+        422:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - 'The customer name field is required.'
+                  errors:
+                    type: object
+                    properties:
+                      customer_name:
+                        type: array
+                        items:
+                          type: string
+                        examples:
+                          -
+                            - 'The customer name field is required.'
+                examples:
+                  -
+                    message: 'The customer name field is required.'
+                    errors:
+                      customer_name:
+                        - 'The customer name field is required.'
+      tags:
+        - Bookings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                service_id:
+                  type: integer
+                  description: 'A bookable service at this business. Must match an existing stored value.'
+                  examples:
+                    - 1
+                staff_id:
+                  type:
+                    - integer
+                    - 'null'
+                  description: 'Who should take it. Omit for anyone available. Must match an existing stored value.'
+                  examples:
+                    - 1
+                starts_at:
+                  type: string
+                  description: 'When the appointment starts. Any offset; stored as UTC. Must be a valid date.'
+                  examples:
+                    - '2026-10-05T07:00:00+00:00'
+                customer_name:
+                  type: string
+                  description: "The customer's name. Must not be greater than 100 characters."
+                  examples:
+                    - 'Layla A.'
+                customer_phone:
+                  type: string
+                  description: '8 to 15 digits, with or without a country code. Must match the regex /^\+?[0-9]{8,15}$/.'
+                  examples:
+                    - '+966501112222'
+                customer_email:
+                  type:
+                    - string
+                    - 'null'
+                  description: 'Optional. Without it the customer cannot be emailed a confirmation. Must be a valid email address. Must not be greater than 255 characters.'
+                  examples:
+                    - layla@example.com
+              required:
+                - service_id
+                - starts_at
+                - customer_name
+                - customer_phone
+    parameters:
+      -
+        in: path
+        name: tenant
+        description: "The business's subdomain."
+        required: true
+        schema:
+          type: string
+          examples:
+            - demo
+  '/api/v1/bookings/{reference}':
+    get:
+      summary: 'Show one booking'
+      operationId: showOneBooking
+      description: 'Needs the `bookings:read` ability.'
+      parameters: []
+      responses:
+        400:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - 'Bad request.'
+                  exception:
+                    type: string
+                    examples:
+                      - Symfony\Component\HttpKernel\Exception\BadRequestHttpException
+                  file:
+                    type: string
+                    examples:
+                      - 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Exceptions\Handler.php'
+                  line:
+                    type: integer
+                    examples:
+                      - 674
+                  trace:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        file:
+                          type: string
+                          examples:
+                            - 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Exceptions\Handler.php'
+                        line:
+                          type: integer
+                          examples:
+                            - 616
+                        function:
+                          type: string
+                          examples:
+                            - prepareException
+                        class:
+                          type: string
+                          examples:
+                            - Illuminate\Foundation\Exceptions\Handler
+                        type:
+                          type: string
+                          examples:
+                            - '->'
+                    examples:
+                      -
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Exceptions\Handler.php'
+                          line: 616
+                          function: prepareException
+                          class: Illuminate\Foundation\Exceptions\Handler
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\nunomaduro\collision\src\Adapters\Laravel\ExceptionHandler.php'
+                          line: 55
+                          function: render
+                          class: Illuminate\Foundation\Exceptions\Handler
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Routing\Pipeline.php'
+                          line: 51
+                          function: render
+                          class: NunoMaduro\Collision\Adapters\Laravel\ExceptionHandler
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php'
+                          line: 224
+                          function: handleException
+                          class: Illuminate\Routing\Pipeline
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks.php'
+                          line: 22
+                          function: 'Illuminate\Pipeline\{closure}'
+                          class: Illuminate\Pipeline\Pipeline
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php'
+                          line: 219
+                          function: handle
+                          class: Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Http\Middleware\ValidatePathEncoding.php'
+                          line: 26
+                          function: 'Illuminate\Pipeline\{closure}'
+                          class: Illuminate\Pipeline\Pipeline
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php'
+                          line: 219
+                          function: handle
+                          class: Illuminate\Http\Middleware\ValidatePathEncoding
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php'
+                          line: 137
+                          function: 'Illuminate\Pipeline\{closure}'
+                          class: Illuminate\Pipeline\Pipeline
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Http\Kernel.php'
+                          line: 175
+                          function: then
+                          class: Illuminate\Pipeline\Pipeline
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Http\Kernel.php'
+                          line: 144
+                          function: sendRequestThroughRouter
+                          class: Illuminate\Foundation\Http\Kernel
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Extracting\Strategies\Responses\ResponseCalls.php'
+                          line: 236
+                          function: handle
+                          class: Illuminate\Foundation\Http\Kernel
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Extracting\Strategies\Responses\ResponseCalls.php'
+                          line: 229
+                          function: callLaravelRoute
+                          class: Knuckles\Scribe\Extracting\Strategies\Responses\ResponseCalls
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Extracting\Strategies\Responses\ResponseCalls.php'
+                          line: 103
+                          function: makeApiCall
+                          class: Knuckles\Scribe\Extracting\Strategies\Responses\ResponseCalls
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Extracting\Strategies\Responses\ResponseCalls.php'
+                          line: 39
+                          function: makeResponseCall
+                          class: Knuckles\Scribe\Extracting\Strategies\Responses\ResponseCalls
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Extracting\Extractor.php'
+                          line: 471
+                          function: __invoke
+                          class: Knuckles\Scribe\Extracting\Strategies\Responses\ResponseCalls
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Extracting\Extractor.php'
+                          line: 397
+                          function: iterateThroughStrategies
+                          class: Knuckles\Scribe\Extracting\Extractor
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Extracting\Extractor.php'
+                          line: 94
+                          function: fetchResponses
+                          class: Knuckles\Scribe\Extracting\Extractor
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\GroupedEndpoints\GroupedEndpointsFromApp.php'
+                          line: 186
+                          function: processRoute
+                          class: Knuckles\Scribe\Extracting\Extractor
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\View\Components\Task.php'
+                          line: 41
+                          function: 'Knuckles\Scribe\GroupedEndpoints\{closure}'
+                          class: Knuckles\Scribe\GroupedEndpoints\GroupedEndpointsFromApp
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\View\Components\Factory.php'
+                          line: 59
+                          function: render
+                          class: Illuminate\Console\View\Components\Task
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\GroupedEndpoints\GroupedEndpointsFromApp.php'
+                          line: 183
+                          function: __call
+                          class: Illuminate\Console\View\Components\Factory
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\GroupedEndpoints\GroupedEndpointsFromApp.php'
+                          line: 73
+                          function: extractEndpointsInfoFromLaravelApp
+                          class: Knuckles\Scribe\GroupedEndpoints\GroupedEndpointsFromApp
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\GroupedEndpoints\GroupedEndpointsFromApp.php'
+                          line: 51
+                          function: extractEndpointsInfoAndWriteToDisk
+                          class: Knuckles\Scribe\GroupedEndpoints\GroupedEndpointsFromApp
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Commands\GenerateDocumentation.php'
+                          line: 55
+                          function: get
+                          class: Knuckles\Scribe\GroupedEndpoints\GroupedEndpointsFromApp
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php'
+                          line: 36
+                          function: handle
+                          class: Knuckles\Scribe\Commands\GenerateDocumentation
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\Util.php'
+                          line: 43
+                          function: 'Illuminate\Container\{closure}'
+                          class: Illuminate\Container\BoundMethod
+                          type: '::'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php'
+                          line: 96
+                          function: unwrapIfClosure
+                          class: Illuminate\Container\Util
+                          type: '::'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php'
+                          line: 35
+                          function: callBoundMethod
+                          class: Illuminate\Container\BoundMethod
+                          type: '::'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\Container.php'
+                          line: 799
+                          function: call
+                          class: Illuminate\Container\BoundMethod
+                          type: '::'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\Command.php'
+                          line: 211
+                          function: call
+                          class: Illuminate\Container\Container
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\symfony\console\Command\Command.php'
+                          line: 341
+                          function: execute
+                          class: Illuminate\Console\Command
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\Command.php'
+                          line: 180
+                          function: run
+                          class: Symfony\Component\Console\Command\Command
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\Concerns\CallsCommands.php'
+                          line: 68
+                          function: run
+                          class: Illuminate\Console\Command
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\Concerns\CallsCommands.php'
+                          line: 29
+                          function: runCommand
+                          class: Illuminate\Console\Command
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\app\Console\Commands\GenerateApiDocsCommand.php'
+                          line: 37
+                          function: call
+                          class: Illuminate\Console\Command
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\app\Tenancy\TenantContext.php'
+                          line: 64
+                          function: 'App\Console\Commands\{closure}'
+                          class: App\Console\Commands\GenerateApiDocsCommand
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\app\Console\Commands\GenerateApiDocsCommand.php'
+                          line: 37
+                          function: runAs
+                          class: App\Tenancy\TenantContext
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php'
+                          line: 36
+                          function: handle
+                          class: App\Console\Commands\GenerateApiDocsCommand
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\Util.php'
+                          line: 43
+                          function: 'Illuminate\Container\{closure}'
+                          class: Illuminate\Container\BoundMethod
+                          type: '::'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php'
+                          line: 96
+                          function: unwrapIfClosure
+                          class: Illuminate\Container\Util
+                          type: '::'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php'
+                          line: 35
+                          function: callBoundMethod
+                          class: Illuminate\Container\BoundMethod
+                          type: '::'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\Container.php'
+                          line: 799
+                          function: call
+                          class: Illuminate\Container\BoundMethod
+                          type: '::'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\Command.php'
+                          line: 211
+                          function: call
+                          class: Illuminate\Container\Container
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\symfony\console\Command\Command.php'
+                          line: 341
+                          function: execute
+                          class: Illuminate\Console\Command
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\Command.php'
+                          line: 180
+                          function: run
+                          class: Symfony\Component\Console\Command\Command
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\symfony\console\Application.php'
+                          line: 1117
+                          function: run
+                          class: Illuminate\Console\Command
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\symfony\console\Application.php'
+                          line: 356
+                          function: doRunCommand
+                          class: Symfony\Component\Console\Application
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\symfony\console\Application.php'
+                          line: 195
+                          function: doRun
+                          class: Symfony\Component\Console\Application
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Console\Kernel.php'
+                          line: 198
+                          function: run
+                          class: Symfony\Component\Console\Application
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Application.php'
+                          line: 1235
+                          function: handle
+                          class: Illuminate\Foundation\Console\Kernel
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\artisan'
+                          line: 16
+                          function: handleCommand
+                          class: Illuminate\Foundation\Application
+                          type: '->'
+                examples:
+                  -
+                    message: 'Bad request.'
+                    exception: Symfony\Component\HttpKernel\Exception\BadRequestHttpException
+                    file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Exceptions\Handler.php'
+                    line: 674
+                    trace:
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Exceptions\Handler.php'
+                        line: 616
+                        function: prepareException
+                        class: Illuminate\Foundation\Exceptions\Handler
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\nunomaduro\collision\src\Adapters\Laravel\ExceptionHandler.php'
+                        line: 55
+                        function: render
+                        class: Illuminate\Foundation\Exceptions\Handler
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Routing\Pipeline.php'
+                        line: 51
+                        function: render
+                        class: NunoMaduro\Collision\Adapters\Laravel\ExceptionHandler
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php'
+                        line: 224
+                        function: handleException
+                        class: Illuminate\Routing\Pipeline
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks.php'
+                        line: 22
+                        function: 'Illuminate\Pipeline\{closure}'
+                        class: Illuminate\Pipeline\Pipeline
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php'
+                        line: 219
+                        function: handle
+                        class: Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Http\Middleware\ValidatePathEncoding.php'
+                        line: 26
+                        function: 'Illuminate\Pipeline\{closure}'
+                        class: Illuminate\Pipeline\Pipeline
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php'
+                        line: 219
+                        function: handle
+                        class: Illuminate\Http\Middleware\ValidatePathEncoding
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php'
+                        line: 137
+                        function: 'Illuminate\Pipeline\{closure}'
+                        class: Illuminate\Pipeline\Pipeline
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Http\Kernel.php'
+                        line: 175
+                        function: then
+                        class: Illuminate\Pipeline\Pipeline
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Http\Kernel.php'
+                        line: 144
+                        function: sendRequestThroughRouter
+                        class: Illuminate\Foundation\Http\Kernel
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Extracting\Strategies\Responses\ResponseCalls.php'
+                        line: 236
+                        function: handle
+                        class: Illuminate\Foundation\Http\Kernel
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Extracting\Strategies\Responses\ResponseCalls.php'
+                        line: 229
+                        function: callLaravelRoute
+                        class: Knuckles\Scribe\Extracting\Strategies\Responses\ResponseCalls
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Extracting\Strategies\Responses\ResponseCalls.php'
+                        line: 103
+                        function: makeApiCall
+                        class: Knuckles\Scribe\Extracting\Strategies\Responses\ResponseCalls
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Extracting\Strategies\Responses\ResponseCalls.php'
+                        line: 39
+                        function: makeResponseCall
+                        class: Knuckles\Scribe\Extracting\Strategies\Responses\ResponseCalls
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Extracting\Extractor.php'
+                        line: 471
+                        function: __invoke
+                        class: Knuckles\Scribe\Extracting\Strategies\Responses\ResponseCalls
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Extracting\Extractor.php'
+                        line: 397
+                        function: iterateThroughStrategies
+                        class: Knuckles\Scribe\Extracting\Extractor
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Extracting\Extractor.php'
+                        line: 94
+                        function: fetchResponses
+                        class: Knuckles\Scribe\Extracting\Extractor
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\GroupedEndpoints\GroupedEndpointsFromApp.php'
+                        line: 186
+                        function: processRoute
+                        class: Knuckles\Scribe\Extracting\Extractor
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\View\Components\Task.php'
+                        line: 41
+                        function: 'Knuckles\Scribe\GroupedEndpoints\{closure}'
+                        class: Knuckles\Scribe\GroupedEndpoints\GroupedEndpointsFromApp
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\View\Components\Factory.php'
+                        line: 59
+                        function: render
+                        class: Illuminate\Console\View\Components\Task
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\GroupedEndpoints\GroupedEndpointsFromApp.php'
+                        line: 183
+                        function: __call
+                        class: Illuminate\Console\View\Components\Factory
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\GroupedEndpoints\GroupedEndpointsFromApp.php'
+                        line: 73
+                        function: extractEndpointsInfoFromLaravelApp
+                        class: Knuckles\Scribe\GroupedEndpoints\GroupedEndpointsFromApp
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\GroupedEndpoints\GroupedEndpointsFromApp.php'
+                        line: 51
+                        function: extractEndpointsInfoAndWriteToDisk
+                        class: Knuckles\Scribe\GroupedEndpoints\GroupedEndpointsFromApp
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Commands\GenerateDocumentation.php'
+                        line: 55
+                        function: get
+                        class: Knuckles\Scribe\GroupedEndpoints\GroupedEndpointsFromApp
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php'
+                        line: 36
+                        function: handle
+                        class: Knuckles\Scribe\Commands\GenerateDocumentation
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\Util.php'
+                        line: 43
+                        function: 'Illuminate\Container\{closure}'
+                        class: Illuminate\Container\BoundMethod
+                        type: '::'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php'
+                        line: 96
+                        function: unwrapIfClosure
+                        class: Illuminate\Container\Util
+                        type: '::'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php'
+                        line: 35
+                        function: callBoundMethod
+                        class: Illuminate\Container\BoundMethod
+                        type: '::'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\Container.php'
+                        line: 799
+                        function: call
+                        class: Illuminate\Container\BoundMethod
+                        type: '::'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\Command.php'
+                        line: 211
+                        function: call
+                        class: Illuminate\Container\Container
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\symfony\console\Command\Command.php'
+                        line: 341
+                        function: execute
+                        class: Illuminate\Console\Command
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\Command.php'
+                        line: 180
+                        function: run
+                        class: Symfony\Component\Console\Command\Command
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\Concerns\CallsCommands.php'
+                        line: 68
+                        function: run
+                        class: Illuminate\Console\Command
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\Concerns\CallsCommands.php'
+                        line: 29
+                        function: runCommand
+                        class: Illuminate\Console\Command
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\app\Console\Commands\GenerateApiDocsCommand.php'
+                        line: 37
+                        function: call
+                        class: Illuminate\Console\Command
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\app\Tenancy\TenantContext.php'
+                        line: 64
+                        function: 'App\Console\Commands\{closure}'
+                        class: App\Console\Commands\GenerateApiDocsCommand
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\app\Console\Commands\GenerateApiDocsCommand.php'
+                        line: 37
+                        function: runAs
+                        class: App\Tenancy\TenantContext
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php'
+                        line: 36
+                        function: handle
+                        class: App\Console\Commands\GenerateApiDocsCommand
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\Util.php'
+                        line: 43
+                        function: 'Illuminate\Container\{closure}'
+                        class: Illuminate\Container\BoundMethod
+                        type: '::'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php'
+                        line: 96
+                        function: unwrapIfClosure
+                        class: Illuminate\Container\Util
+                        type: '::'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php'
+                        line: 35
+                        function: callBoundMethod
+                        class: Illuminate\Container\BoundMethod
+                        type: '::'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\Container.php'
+                        line: 799
+                        function: call
+                        class: Illuminate\Container\BoundMethod
+                        type: '::'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\Command.php'
+                        line: 211
+                        function: call
+                        class: Illuminate\Container\Container
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\symfony\console\Command\Command.php'
+                        line: 341
+                        function: execute
+                        class: Illuminate\Console\Command
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\Command.php'
+                        line: 180
+                        function: run
+                        class: Symfony\Component\Console\Command\Command
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\symfony\console\Application.php'
+                        line: 1117
+                        function: run
+                        class: Illuminate\Console\Command
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\symfony\console\Application.php'
+                        line: 356
+                        function: doRunCommand
+                        class: Symfony\Component\Console\Application
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\symfony\console\Application.php'
+                        line: 195
+                        function: doRun
+                        class: Symfony\Component\Console\Application
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Console\Kernel.php'
+                        line: 198
+                        function: run
+                        class: Symfony\Component\Console\Application
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Application.php'
+                        line: 1235
+                        function: handle
+                        class: Illuminate\Foundation\Console\Kernel
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\artisan'
+                        line: 16
+                        function: handleCommand
+                        class: Illuminate\Foundation\Application
+                        type: '->'
+        404:
+          description: 'No such booking at this business.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - 'Not Found'
+                examples:
+                  -
+                    message: 'Not Found'
+      tags:
+        - Bookings
+    delete:
+      summary: 'Cancel a booking'
+      operationId: cancelABooking
+      description: "Needs the `bookings:write` ability. The appointment's time becomes\nimmediately bookable again and the customer is notified. Staff are not\nheld to the customer notice period."
+      parameters: []
+      responses:
+        400:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - 'Bad request.'
+                  exception:
+                    type: string
+                    examples:
+                      - Symfony\Component\HttpKernel\Exception\BadRequestHttpException
+                  file:
+                    type: string
+                    examples:
+                      - 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Exceptions\Handler.php'
+                  line:
+                    type: integer
+                    examples:
+                      - 674
+                  trace:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        file:
+                          type: string
+                          examples:
+                            - 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Exceptions\Handler.php'
+                        line:
+                          type: integer
+                          examples:
+                            - 616
+                        function:
+                          type: string
+                          examples:
+                            - prepareException
+                        class:
+                          type: string
+                          examples:
+                            - Illuminate\Foundation\Exceptions\Handler
+                        type:
+                          type: string
+                          examples:
+                            - '->'
+                    examples:
+                      -
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Exceptions\Handler.php'
+                          line: 616
+                          function: prepareException
+                          class: Illuminate\Foundation\Exceptions\Handler
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\nunomaduro\collision\src\Adapters\Laravel\ExceptionHandler.php'
+                          line: 55
+                          function: render
+                          class: Illuminate\Foundation\Exceptions\Handler
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Routing\Pipeline.php'
+                          line: 51
+                          function: render
+                          class: NunoMaduro\Collision\Adapters\Laravel\ExceptionHandler
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php'
+                          line: 224
+                          function: handleException
+                          class: Illuminate\Routing\Pipeline
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks.php'
+                          line: 22
+                          function: 'Illuminate\Pipeline\{closure}'
+                          class: Illuminate\Pipeline\Pipeline
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php'
+                          line: 219
+                          function: handle
+                          class: Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Http\Middleware\ValidatePathEncoding.php'
+                          line: 26
+                          function: 'Illuminate\Pipeline\{closure}'
+                          class: Illuminate\Pipeline\Pipeline
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php'
+                          line: 219
+                          function: handle
+                          class: Illuminate\Http\Middleware\ValidatePathEncoding
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php'
+                          line: 137
+                          function: 'Illuminate\Pipeline\{closure}'
+                          class: Illuminate\Pipeline\Pipeline
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Http\Kernel.php'
+                          line: 175
+                          function: then
+                          class: Illuminate\Pipeline\Pipeline
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Http\Kernel.php'
+                          line: 144
+                          function: sendRequestThroughRouter
+                          class: Illuminate\Foundation\Http\Kernel
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Extracting\Strategies\Responses\ResponseCalls.php'
+                          line: 236
+                          function: handle
+                          class: Illuminate\Foundation\Http\Kernel
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Extracting\Strategies\Responses\ResponseCalls.php'
+                          line: 229
+                          function: callLaravelRoute
+                          class: Knuckles\Scribe\Extracting\Strategies\Responses\ResponseCalls
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Extracting\Strategies\Responses\ResponseCalls.php'
+                          line: 103
+                          function: makeApiCall
+                          class: Knuckles\Scribe\Extracting\Strategies\Responses\ResponseCalls
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Extracting\Strategies\Responses\ResponseCalls.php'
+                          line: 39
+                          function: makeResponseCall
+                          class: Knuckles\Scribe\Extracting\Strategies\Responses\ResponseCalls
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Extracting\Extractor.php'
+                          line: 471
+                          function: __invoke
+                          class: Knuckles\Scribe\Extracting\Strategies\Responses\ResponseCalls
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Extracting\Extractor.php'
+                          line: 397
+                          function: iterateThroughStrategies
+                          class: Knuckles\Scribe\Extracting\Extractor
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Extracting\Extractor.php'
+                          line: 94
+                          function: fetchResponses
+                          class: Knuckles\Scribe\Extracting\Extractor
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\GroupedEndpoints\GroupedEndpointsFromApp.php'
+                          line: 186
+                          function: processRoute
+                          class: Knuckles\Scribe\Extracting\Extractor
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\View\Components\Task.php'
+                          line: 41
+                          function: 'Knuckles\Scribe\GroupedEndpoints\{closure}'
+                          class: Knuckles\Scribe\GroupedEndpoints\GroupedEndpointsFromApp
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\View\Components\Factory.php'
+                          line: 59
+                          function: render
+                          class: Illuminate\Console\View\Components\Task
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\GroupedEndpoints\GroupedEndpointsFromApp.php'
+                          line: 183
+                          function: __call
+                          class: Illuminate\Console\View\Components\Factory
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\GroupedEndpoints\GroupedEndpointsFromApp.php'
+                          line: 73
+                          function: extractEndpointsInfoFromLaravelApp
+                          class: Knuckles\Scribe\GroupedEndpoints\GroupedEndpointsFromApp
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\GroupedEndpoints\GroupedEndpointsFromApp.php'
+                          line: 51
+                          function: extractEndpointsInfoAndWriteToDisk
+                          class: Knuckles\Scribe\GroupedEndpoints\GroupedEndpointsFromApp
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Commands\GenerateDocumentation.php'
+                          line: 55
+                          function: get
+                          class: Knuckles\Scribe\GroupedEndpoints\GroupedEndpointsFromApp
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php'
+                          line: 36
+                          function: handle
+                          class: Knuckles\Scribe\Commands\GenerateDocumentation
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\Util.php'
+                          line: 43
+                          function: 'Illuminate\Container\{closure}'
+                          class: Illuminate\Container\BoundMethod
+                          type: '::'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php'
+                          line: 96
+                          function: unwrapIfClosure
+                          class: Illuminate\Container\Util
+                          type: '::'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php'
+                          line: 35
+                          function: callBoundMethod
+                          class: Illuminate\Container\BoundMethod
+                          type: '::'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\Container.php'
+                          line: 799
+                          function: call
+                          class: Illuminate\Container\BoundMethod
+                          type: '::'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\Command.php'
+                          line: 211
+                          function: call
+                          class: Illuminate\Container\Container
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\symfony\console\Command\Command.php'
+                          line: 341
+                          function: execute
+                          class: Illuminate\Console\Command
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\Command.php'
+                          line: 180
+                          function: run
+                          class: Symfony\Component\Console\Command\Command
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\Concerns\CallsCommands.php'
+                          line: 68
+                          function: run
+                          class: Illuminate\Console\Command
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\Concerns\CallsCommands.php'
+                          line: 29
+                          function: runCommand
+                          class: Illuminate\Console\Command
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\app\Console\Commands\GenerateApiDocsCommand.php'
+                          line: 37
+                          function: call
+                          class: Illuminate\Console\Command
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\app\Tenancy\TenantContext.php'
+                          line: 64
+                          function: 'App\Console\Commands\{closure}'
+                          class: App\Console\Commands\GenerateApiDocsCommand
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\app\Console\Commands\GenerateApiDocsCommand.php'
+                          line: 37
+                          function: runAs
+                          class: App\Tenancy\TenantContext
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php'
+                          line: 36
+                          function: handle
+                          class: App\Console\Commands\GenerateApiDocsCommand
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\Util.php'
+                          line: 43
+                          function: 'Illuminate\Container\{closure}'
+                          class: Illuminate\Container\BoundMethod
+                          type: '::'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php'
+                          line: 96
+                          function: unwrapIfClosure
+                          class: Illuminate\Container\Util
+                          type: '::'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php'
+                          line: 35
+                          function: callBoundMethod
+                          class: Illuminate\Container\BoundMethod
+                          type: '::'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\Container.php'
+                          line: 799
+                          function: call
+                          class: Illuminate\Container\BoundMethod
+                          type: '::'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\Command.php'
+                          line: 211
+                          function: call
+                          class: Illuminate\Container\Container
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\symfony\console\Command\Command.php'
+                          line: 341
+                          function: execute
+                          class: Illuminate\Console\Command
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\Command.php'
+                          line: 180
+                          function: run
+                          class: Symfony\Component\Console\Command\Command
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\symfony\console\Application.php'
+                          line: 1117
+                          function: run
+                          class: Illuminate\Console\Command
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\symfony\console\Application.php'
+                          line: 356
+                          function: doRunCommand
+                          class: Symfony\Component\Console\Application
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\symfony\console\Application.php'
+                          line: 195
+                          function: doRun
+                          class: Symfony\Component\Console\Application
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Console\Kernel.php'
+                          line: 198
+                          function: run
+                          class: Symfony\Component\Console\Application
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Application.php'
+                          line: 1235
+                          function: handle
+                          class: Illuminate\Foundation\Console\Kernel
+                          type: '->'
+                        -
+                          file: 'C:\xampp8.4\htdocs\maw3idy\artisan'
+                          line: 16
+                          function: handleCommand
+                          class: Illuminate\Foundation\Application
+                          type: '->'
+                examples:
+                  -
+                    message: 'Bad request.'
+                    exception: Symfony\Component\HttpKernel\Exception\BadRequestHttpException
+                    file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Exceptions\Handler.php'
+                    line: 674
+                    trace:
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Exceptions\Handler.php'
+                        line: 616
+                        function: prepareException
+                        class: Illuminate\Foundation\Exceptions\Handler
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\nunomaduro\collision\src\Adapters\Laravel\ExceptionHandler.php'
+                        line: 55
+                        function: render
+                        class: Illuminate\Foundation\Exceptions\Handler
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Routing\Pipeline.php'
+                        line: 51
+                        function: render
+                        class: NunoMaduro\Collision\Adapters\Laravel\ExceptionHandler
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php'
+                        line: 224
+                        function: handleException
+                        class: Illuminate\Routing\Pipeline
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks.php'
+                        line: 22
+                        function: 'Illuminate\Pipeline\{closure}'
+                        class: Illuminate\Pipeline\Pipeline
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php'
+                        line: 219
+                        function: handle
+                        class: Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Http\Middleware\ValidatePathEncoding.php'
+                        line: 26
+                        function: 'Illuminate\Pipeline\{closure}'
+                        class: Illuminate\Pipeline\Pipeline
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php'
+                        line: 219
+                        function: handle
+                        class: Illuminate\Http\Middleware\ValidatePathEncoding
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php'
+                        line: 137
+                        function: 'Illuminate\Pipeline\{closure}'
+                        class: Illuminate\Pipeline\Pipeline
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Http\Kernel.php'
+                        line: 175
+                        function: then
+                        class: Illuminate\Pipeline\Pipeline
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Http\Kernel.php'
+                        line: 144
+                        function: sendRequestThroughRouter
+                        class: Illuminate\Foundation\Http\Kernel
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Extracting\Strategies\Responses\ResponseCalls.php'
+                        line: 236
+                        function: handle
+                        class: Illuminate\Foundation\Http\Kernel
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Extracting\Strategies\Responses\ResponseCalls.php'
+                        line: 229
+                        function: callLaravelRoute
+                        class: Knuckles\Scribe\Extracting\Strategies\Responses\ResponseCalls
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Extracting\Strategies\Responses\ResponseCalls.php'
+                        line: 103
+                        function: makeApiCall
+                        class: Knuckles\Scribe\Extracting\Strategies\Responses\ResponseCalls
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Extracting\Strategies\Responses\ResponseCalls.php'
+                        line: 39
+                        function: makeResponseCall
+                        class: Knuckles\Scribe\Extracting\Strategies\Responses\ResponseCalls
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Extracting\Extractor.php'
+                        line: 471
+                        function: __invoke
+                        class: Knuckles\Scribe\Extracting\Strategies\Responses\ResponseCalls
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Extracting\Extractor.php'
+                        line: 397
+                        function: iterateThroughStrategies
+                        class: Knuckles\Scribe\Extracting\Extractor
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Extracting\Extractor.php'
+                        line: 94
+                        function: fetchResponses
+                        class: Knuckles\Scribe\Extracting\Extractor
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\GroupedEndpoints\GroupedEndpointsFromApp.php'
+                        line: 186
+                        function: processRoute
+                        class: Knuckles\Scribe\Extracting\Extractor
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\View\Components\Task.php'
+                        line: 41
+                        function: 'Knuckles\Scribe\GroupedEndpoints\{closure}'
+                        class: Knuckles\Scribe\GroupedEndpoints\GroupedEndpointsFromApp
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\View\Components\Factory.php'
+                        line: 59
+                        function: render
+                        class: Illuminate\Console\View\Components\Task
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\GroupedEndpoints\GroupedEndpointsFromApp.php'
+                        line: 183
+                        function: __call
+                        class: Illuminate\Console\View\Components\Factory
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\GroupedEndpoints\GroupedEndpointsFromApp.php'
+                        line: 73
+                        function: extractEndpointsInfoFromLaravelApp
+                        class: Knuckles\Scribe\GroupedEndpoints\GroupedEndpointsFromApp
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\GroupedEndpoints\GroupedEndpointsFromApp.php'
+                        line: 51
+                        function: extractEndpointsInfoAndWriteToDisk
+                        class: Knuckles\Scribe\GroupedEndpoints\GroupedEndpointsFromApp
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\knuckleswtf\scribe\src\Commands\GenerateDocumentation.php'
+                        line: 55
+                        function: get
+                        class: Knuckles\Scribe\GroupedEndpoints\GroupedEndpointsFromApp
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php'
+                        line: 36
+                        function: handle
+                        class: Knuckles\Scribe\Commands\GenerateDocumentation
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\Util.php'
+                        line: 43
+                        function: 'Illuminate\Container\{closure}'
+                        class: Illuminate\Container\BoundMethod
+                        type: '::'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php'
+                        line: 96
+                        function: unwrapIfClosure
+                        class: Illuminate\Container\Util
+                        type: '::'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php'
+                        line: 35
+                        function: callBoundMethod
+                        class: Illuminate\Container\BoundMethod
+                        type: '::'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\Container.php'
+                        line: 799
+                        function: call
+                        class: Illuminate\Container\BoundMethod
+                        type: '::'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\Command.php'
+                        line: 211
+                        function: call
+                        class: Illuminate\Container\Container
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\symfony\console\Command\Command.php'
+                        line: 341
+                        function: execute
+                        class: Illuminate\Console\Command
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\Command.php'
+                        line: 180
+                        function: run
+                        class: Symfony\Component\Console\Command\Command
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\Concerns\CallsCommands.php'
+                        line: 68
+                        function: run
+                        class: Illuminate\Console\Command
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\Concerns\CallsCommands.php'
+                        line: 29
+                        function: runCommand
+                        class: Illuminate\Console\Command
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\app\Console\Commands\GenerateApiDocsCommand.php'
+                        line: 37
+                        function: call
+                        class: Illuminate\Console\Command
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\app\Tenancy\TenantContext.php'
+                        line: 64
+                        function: 'App\Console\Commands\{closure}'
+                        class: App\Console\Commands\GenerateApiDocsCommand
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\app\Console\Commands\GenerateApiDocsCommand.php'
+                        line: 37
+                        function: runAs
+                        class: App\Tenancy\TenantContext
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php'
+                        line: 36
+                        function: handle
+                        class: App\Console\Commands\GenerateApiDocsCommand
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\Util.php'
+                        line: 43
+                        function: 'Illuminate\Container\{closure}'
+                        class: Illuminate\Container\BoundMethod
+                        type: '::'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php'
+                        line: 96
+                        function: unwrapIfClosure
+                        class: Illuminate\Container\Util
+                        type: '::'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php'
+                        line: 35
+                        function: callBoundMethod
+                        class: Illuminate\Container\BoundMethod
+                        type: '::'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Container\Container.php'
+                        line: 799
+                        function: call
+                        class: Illuminate\Container\BoundMethod
+                        type: '::'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\Command.php'
+                        line: 211
+                        function: call
+                        class: Illuminate\Container\Container
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\symfony\console\Command\Command.php'
+                        line: 341
+                        function: execute
+                        class: Illuminate\Console\Command
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Console\Command.php'
+                        line: 180
+                        function: run
+                        class: Symfony\Component\Console\Command\Command
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\symfony\console\Application.php'
+                        line: 1117
+                        function: run
+                        class: Illuminate\Console\Command
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\symfony\console\Application.php'
+                        line: 356
+                        function: doRunCommand
+                        class: Symfony\Component\Console\Application
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\symfony\console\Application.php'
+                        line: 195
+                        function: doRun
+                        class: Symfony\Component\Console\Application
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Console\Kernel.php'
+                        line: 198
+                        function: run
+                        class: Symfony\Component\Console\Application
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\vendor\laravel\framework\src\Illuminate\Foundation\Application.php'
+                        line: 1235
+                        function: handle
+                        class: Illuminate\Foundation\Console\Kernel
+                        type: '->'
+                      -
+                        file: 'C:\xampp8.4\htdocs\maw3idy\artisan'
+                        line: 16
+                        function: handleCommand
+                        class: Illuminate\Foundation\Application
+                        type: '->'
+        422:
+          description: 'Already cancelled, or in the past.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - 'This booking has already been cancelled.'
+                examples:
+                  -
+                    message: 'This booking has already been cancelled.'
+      tags:
+        - Bookings
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type:
+                    - string
+                    - 'null'
+                  description: 'Why it was cancelled. Shown to the customer and kept on the record. Must not be greater than 500 characters.'
+                  examples:
+                    - 'Customer called to cancel'
+    parameters:
+      -
+        in: path
+        name: reference
+        description: ''
+        required: true
+        schema:
+          type: integer
+          examples:
+            - 7
+      -
+        in: path
+        name: tenant
+        description: "The business's subdomain."
+        required: true
+        schema:
+          type: string
+          examples:
+            - demo
+      -
+        in: path
+        name: booking
+        description: 'The booking reference.'
+        required: true
+        schema:
+          type: string
+          examples:
+            - MW-7K3P9Q
+  /api/v1/services:
+    get:
+      summary: 'List bookable services'
+      operationId: listBookableServices
+      description: "Only services that are active and have at least one active staff member\nare listed: anything else could not be booked."
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          examples:
+                            - 1
+                        name:
+                          type: string
+                          examples:
+                            - Haircut
+                        description:
+                          type: string
+                          examples:
+                            - 'Wash, cut and style.'
+                        duration_minutes:
+                          type: integer
+                          examples:
+                            - 30
+                        buffer_after_minutes:
+                          type: integer
+                          examples:
+                            - 5
+                        price:
+                          type: string
+                          examples:
+                            - '80.00'
+                        currency:
+                          type: string
+                          examples:
+                            - SAR
+                        active:
+                          type: boolean
+                          examples:
+                            - true
+                        staff:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: integer
+                                examples:
+                                  - 1
+                              name:
+                                type: string
+                                examples:
+                                  - Sara
+                              active:
+                                type: boolean
+                                examples:
+                                  - true
+                          examples:
+                            -
+                              -
+                                id: 1
+                                name: Sara
+                                active: true
+                    examples:
+                      -
+                        -
+                          id: 1
+                          name: Haircut
+                          description: 'Wash, cut and style.'
+                          duration_minutes: 30
+                          buffer_after_minutes: 5
+                          price: '80.00'
+                          currency: SAR
+                          active: true
+                          staff:
+                            -
+                              id: 1
+                              name: Sara
+                              active: true
+                  meta:
+                    type: object
+                    properties:
+                      timezone:
+                        type: string
+                        examples:
+                          - Asia/Riyadh
+                examples:
+                  -
+                    data:
+                      -
+                        id: 1
+                        name: Haircut
+                        description: 'Wash, cut and style.'
+                        duration_minutes: 30
+                        buffer_after_minutes: 5
+                        price: '80.00'
+                        currency: SAR
+                        active: true
+                        staff:
+                          -
+                            id: 1
+                            name: Sara
+                            active: true
+                    meta:
+                      timezone: Asia/Riyadh
+      tags:
+        - Services
+      security: []
+    parameters:
+      -
+        in: path
+        name: tenant
+        description: "The business's subdomain."
+        required: true
+        schema:
+          type: string
+          examples:
+            - demo
+  '/api/v1/services/{id}':
+    get:
+      summary: 'Show one service'
+      operationId: showOneService
+      description: ''
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        examples:
+                          - 1
+                      name:
+                        type: string
+                        examples:
+                          - Haircut
+                      description:
+                        type: string
+                        examples:
+                          - 'Wash, cut and style.'
+                      duration_minutes:
+                        type: integer
+                        examples:
+                          - 30
+                      buffer_after_minutes:
+                        type: integer
+                        examples:
+                          - 5
+                      price:
+                        type: string
+                        examples:
+                          - '80.00'
+                      currency:
+                        type: string
+                        examples:
+                          - SAR
+                      active:
+                        type: boolean
+                        examples:
+                          - true
+                      staff:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                              examples:
+                                - 1
+                            name:
+                              type: string
+                              examples:
+                                - Sara
+                            active:
+                              type: boolean
+                              examples:
+                                - true
+                        examples:
+                          -
+                            -
+                              id: 1
+                              name: Sara
+                              active: true
+                  meta:
+                    type: object
+                    properties:
+                      timezone:
+                        type: string
+                        examples:
+                          - Asia/Riyadh
+                examples:
+                  -
+                    data:
+                      id: 1
+                      name: Haircut
+                      description: 'Wash, cut and style.'
+                      duration_minutes: 30
+                      buffer_after_minutes: 5
+                      price: '80.00'
+                      currency: SAR
+                      active: true
+                      staff:
+                        -
+                          id: 1
+                          name: Sara
+                          active: true
+                    meta:
+                      timezone: Asia/Riyadh
+        404:
+          description: 'No such service, or it is not bookable.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - 'Not Found'
+                examples:
+                  -
+                    message: 'Not Found'
+      tags:
+        - Services
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the service.'
+        required: true
+        schema:
+          type: integer
+          examples:
+            - 1
+      -
+        in: path
+        name: tenant
+        description: "The business's subdomain."
+        required: true
+        schema:
+          type: string
+          examples:
+            - demo
+      -
+        in: path
+        name: service
+        description: 'The service id.'
+        required: true
+        schema:
+          type: integer
+          examples:
+            - 1
+  /api/v1/tokens:
+    post:
+      summary: 'Create a token'
+      operationId: createAToken
+      description: "Send a staff account's email and password and receive a bearer token.\nAsk for `abilities` explicitly to be able to write; without them the\ntoken can only read.\n\nThrottled to five attempts a minute per caller and per email address."
+      parameters: []
+      responses:
+        201:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    examples:
+                      - 7|xGqz0Rk2mVb8yQ1pLw4TfHsDcE6aJhN3
+                  abilities:
+                    type: array
+                    items:
+                      type: string
+                    examples:
+                      -
+                        - 'services:read'
+                        - 'bookings:read'
+                  tenant:
+                    type: string
+                    examples:
+                      - demo
+                examples:
+                  -
+                    token: 7|xGqz0Rk2mVb8yQ1pLw4TfHsDcE6aJhN3
+                    abilities:
+                      - 'services:read'
+                      - 'bookings:read'
+                    tenant: demo
+        422:
+          description: 'Wrong credentials, or an account that belongs to another business.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - 'These credentials do not match our records.'
+                  errors:
+                    type: object
+                    properties:
+                      email:
+                        type: array
+                        items:
+                          type: string
+                        examples:
+                          -
+                            - 'These credentials do not match our records.'
+                examples:
+                  -
+                    message: 'These credentials do not match our records.'
+                    errors:
+                      email:
+                        - 'These credentials do not match our records.'
+        429:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    examples:
+                      - 'Too Many Attempts.'
+                examples:
+                  -
+                    message: 'Too Many Attempts.'
+      tags:
+        - Tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: 'A staff account at this business. Must be a valid email address.'
+                  examples:
+                    - owner@demo.test
+                password:
+                  type: string
+                  description: "That account's password."
+                  examples:
+                    - password
+                device_name:
+                  type: string
+                  description: 'What this token is for. Shown when reviewing tokens. Must not be greater than 100 characters.'
+                  examples:
+                    - 'Front desk iPad'
+                abilities:
+                  type: array
+                  description: 'One ability.'
+                  items:
+                    type: string
+                    enum:
+                      - 'services:read'
+                      - 'bookings:read'
+                      - 'bookings:write'
+                  examples:
+                    -
+                      - 'bookings:write'
+              required:
+                - email
+                - password
+                - device_name
+      security: []
+    parameters:
+      -
+        in: path
+        name: tenant
+        description: "The business's subdomain. The token will only work here."
+        required: true
+        schema:
+          type: string
+          examples:
+            - demo
+  /api/v1/tokens/current:
+    delete:
+      summary: 'Revoke the current token'
+      operationId: revokeTheCurrentToken
+      description: 'Deletes the token this request was made with. Other tokens are untouched.'
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  revoked:
+                    type: boolean
+                    examples:
+                      - true
+                examples:
+                  -
+                    revoked: true
+      tags:
+        - Tokens
+    parameters:
+      -
+        in: path
+        name: tenant
+        description: "The business's subdomain. The token will only work here."
+        required: true
+        schema:
+          type: string
+          examples:
+            - demo

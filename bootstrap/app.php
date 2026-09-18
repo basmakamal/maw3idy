@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\ContentSecurityPolicy;
 use App\Http\Middleware\IdentifyTenant;
 use App\Http\Middleware\SecurityHeaders;
 use App\Providers\ApiServiceProvider;
@@ -18,6 +19,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(SecurityHeaders::class);
+        // Prepended: the nonce must exist before any view renders a script tag.
+        $middleware->web(prepend: ContentSecurityPolicy::class);
 
         $middleware->alias(['tenant' => IdentifyTenant::class]);
 

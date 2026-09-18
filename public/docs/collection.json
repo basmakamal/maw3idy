@@ -1,0 +1,597 @@
+{
+    "variable": [
+        {
+            "id": "baseUrl",
+            "key": "baseUrl",
+            "type": "string",
+            "name": "string",
+            "value": "http:\/\/demo.maw3idy.localhost:8000"
+        }
+    ],
+    "info": {
+        "name": "Maw3idy API Documentation",
+        "_postman_id": "maw3idy-api-v1",
+        "description": "Read a business's services and availability, and create or cancel bookings on its behalf.",
+        "schema": "https:\/\/schema.getpostman.com\/json\/collection\/v2.1.0\/collection.json"
+    },
+    "item": [
+        {
+            "name": "Availability",
+            "description": "When a service can be booked. Public, and throttled to 60 requests a minute.",
+            "item": [
+                {
+                    "name": "Start times for a day",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/services\/:service_id\/availability",
+                            "query": [
+                                {
+                                    "key": "date",
+                                    "value": "2026-10-05",
+                                    "description": "The day to check, in the business's timezone. Today or later, and within the booking window. Must be a valid date in the format Y-m-d. Must be a date after or equal to 2026-09-18. Must be a date before or equal to 2026-10-18.",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "staff_id",
+                                    "value": "1",
+                                    "description": "Limit the answer to one staff member. Omit to see every time anyone could take. Must match an existing stored value.",
+                                    "disabled": false
+                                }
+                            ],
+                            "raw": "{{baseUrl}}\/api\/v1\/services\/:service_id\/availability?date=2026-10-05&staff_id=1",
+                            "variable": [
+                                {
+                                    "id": "service_id",
+                                    "key": "service_id",
+                                    "value": 1,
+                                    "description": "The ID of the service."
+                                },
+                                {
+                                    "id": "tenant",
+                                    "key": "tenant",
+                                    "value": "demo",
+                                    "description": "The business's subdomain."
+                                },
+                                {
+                                    "id": "service",
+                                    "key": "service",
+                                    "value": 1,
+                                    "description": "The service id."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "Returns the start times a customer could actually take: inside the\nstaff's working hours, clear of existing bookings and their buffers,\nclear of time off, and in the future. Each slot lists the staff who\ncould take it, so \"anyone available\" is one request, not one per person.\n\nA slot can disappear between this call and a booking; creating a booking\nanswers `409` in that case.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\"data\":[{\"starts_at\":\"2026-10-05T06:00:00+00:00\",\"ends_at\":\"2026-10-05T06:30:00+00:00\",\"staff_ids\":[1,2]},{\"starts_at\":\"2026-10-05T06:35:00+00:00\",\"ends_at\":\"2026-10-05T07:05:00+00:00\",\"staff_ids\":[1]}],\"meta\":{\"date\":\"2026-10-05\",\"timezone\":\"Asia\\\/Riyadh\",\"service_id\":1,\"staff_id\":null,\"duration_minutes\":30}}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 422,
+                            "body": "{\"message\":\"The date field is required.\",\"errors\":{\"date\":[\"The date field is required.\"]}}",
+                            "name": "A missing, malformed or out-of-window date, or a staff member who does not work here."
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Bookings",
+            "description": "Reading the diary and changing it. Needs a token with the matching ability.",
+            "item": [
+                {
+                    "name": "List bookings",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/bookings",
+                            "query": [
+                                {
+                                    "key": "from",
+                                    "value": "2026-10-05T00:00:00Z",
+                                    "description": "Only appointments starting at or after this instant. Must be a valid date.",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "to",
+                                    "value": "2026-10-12T00:00:00Z",
+                                    "description": "Only appointments starting at or before this instant. Must be a valid date. Must be a date after or equal to from.",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "staff_id",
+                                    "value": "1",
+                                    "description": "Only this staff member's appointments.",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "status",
+                                    "value": "confirmed",
+                                    "description": "Either `confirmed` or `cancelled`.",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "25",
+                                    "description": "Results per page, 1 to 100. Must be at least 1. Must not be greater than 100.",
+                                    "disabled": false
+                                }
+                            ],
+                            "raw": "{{baseUrl}}\/api\/v1\/bookings?from=2026-10-05T00%3A00%3A00Z&to=2026-10-12T00%3A00%3A00Z&staff_id=1&status=confirmed&per_page=25",
+                            "variable": [
+                                {
+                                    "id": "tenant",
+                                    "key": "tenant",
+                                    "value": "demo",
+                                    "description": "The business's subdomain."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "Needs the `bookings:read` ability. Paginated, oldest appointment first."
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\"data\":[{\"reference\":\"MW-7K3P9Q\",\"status\":\"confirmed\",\"starts_at\":\"2026-10-05T07:00:00+00:00\",\"ends_at\":\"2026-10-05T07:30:00+00:00\",\"duration_minutes\":30,\"buffer_after_minutes\":5,\"price\":\"80.00\",\"currency\":\"SAR\",\"customer\":{\"name\":\"Layla A.\",\"phone\":\"+966501112222\",\"email\":null},\"cancelled_at\":null,\"cancellation_reason\":null,\"created_at\":\"2026-09-28T09:14:00+00:00\"}],\"meta\":{\"timezone\":\"Asia\\\/Riyadh\",\"current_page\":1,\"per_page\":25,\"total\":1}}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 403,
+                            "body": "{\"message\":\"This token is not allowed to do that.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Create a booking",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/bookings",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/bookings",
+                            "variable": [
+                                {
+                                    "id": "tenant",
+                                    "key": "tenant",
+                                    "value": "demo",
+                                    "description": "The business's subdomain."
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"service_id\":1,\"staff_id\":1,\"starts_at\":\"2026-10-05T07:00:00+00:00\",\"customer_name\":\"Layla A.\",\"customer_phone\":\"+966501112222\",\"customer_email\":\"layla@example.com\"}"
+                        },
+                        "description": "Needs the `bookings:write` ability.\n\nOmit `staff_id` to let the platform pick anyone who offers the service\nand is free. The slot is verified again under a lock before the booking\nis written, so two callers racing for the same time cannot both win: the\nloser gets `409`.\n\nThe service's duration, buffer and price are copied onto the booking, so\nlater changes to the service never rewrite an existing appointment."
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 201,
+                            "body": "{\"data\":{\"reference\":\"MW-7K3P9Q\",\"status\":\"confirmed\",\"starts_at\":\"2026-10-05T07:00:00+00:00\",\"ends_at\":\"2026-10-05T07:30:00+00:00\",\"duration_minutes\":30,\"buffer_after_minutes\":5,\"price\":\"80.00\",\"currency\":\"SAR\",\"customer\":{\"name\":\"Layla A.\",\"phone\":\"+966501112222\",\"email\":null},\"cancelled_at\":null,\"cancellation_reason\":null,\"created_at\":\"2026-09-28T09:14:00+00:00\"},\"meta\":{\"timezone\":\"Asia\\\/Riyadh\"}}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 409,
+                            "body": "{\"message\":\"The slot starting at 2026-10-05T07:00:00+00:00 is no longer available.\"}",
+                            "name": "The time was taken while the caller was deciding."
+                        },
+                        {
+                            "header": [],
+                            "code": 422,
+                            "body": "{\"message\":\"The customer name field is required.\",\"errors\":{\"customer_name\":[\"The customer name field is required.\"]}}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Show one booking",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/bookings\/:reference",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/bookings\/:reference",
+                            "variable": [
+                                {
+                                    "id": "reference",
+                                    "key": "reference",
+                                    "value": 7,
+                                    "description": ""
+                                },
+                                {
+                                    "id": "tenant",
+                                    "key": "tenant",
+                                    "value": "demo",
+                                    "description": "The business's subdomain."
+                                },
+                                {
+                                    "id": "booking",
+                                    "key": "booking",
+                                    "value": "MW-7K3P9Q",
+                                    "description": "The booking reference."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "Needs the `bookings:read` ability."
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                }
+                            ],
+                            "code": 400,
+                            "body": "{\n    \"message\": \"Bad request.\",\n    \"exception\": \"Symfony\\\\Component\\\\HttpKernel\\\\Exception\\\\BadRequestHttpException\",\n    \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Foundation\\\\Exceptions\\\\Handler.php\",\n    \"line\": 674,\n    \"trace\": [\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Foundation\\\\Exceptions\\\\Handler.php\",\n            \"line\": 616,\n            \"function\": \"prepareException\",\n            \"class\": \"Illuminate\\\\Foundation\\\\Exceptions\\\\Handler\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\nunomaduro\\\\collision\\\\src\\\\Adapters\\\\Laravel\\\\ExceptionHandler.php\",\n            \"line\": 55,\n            \"function\": \"render\",\n            \"class\": \"Illuminate\\\\Foundation\\\\Exceptions\\\\Handler\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Routing\\\\Pipeline.php\",\n            \"line\": 51,\n            \"function\": \"render\",\n            \"class\": \"NunoMaduro\\\\Collision\\\\Adapters\\\\Laravel\\\\ExceptionHandler\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\",\n            \"line\": 224,\n            \"function\": \"handleException\",\n            \"class\": \"Illuminate\\\\Routing\\\\Pipeline\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Foundation\\\\Http\\\\Middleware\\\\InvokeDeferredCallbacks.php\",\n            \"line\": 22,\n            \"function\": \"Illuminate\\\\Pipeline\\\\{closure}\",\n            \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\",\n            \"line\": 219,\n            \"function\": \"handle\",\n            \"class\": \"Illuminate\\\\Foundation\\\\Http\\\\Middleware\\\\InvokeDeferredCallbacks\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Http\\\\Middleware\\\\ValidatePathEncoding.php\",\n            \"line\": 26,\n            \"function\": \"Illuminate\\\\Pipeline\\\\{closure}\",\n            \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\",\n            \"line\": 219,\n            \"function\": \"handle\",\n            \"class\": \"Illuminate\\\\Http\\\\Middleware\\\\ValidatePathEncoding\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\",\n            \"line\": 137,\n            \"function\": \"Illuminate\\\\Pipeline\\\\{closure}\",\n            \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Foundation\\\\Http\\\\Kernel.php\",\n            \"line\": 175,\n            \"function\": \"then\",\n            \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Foundation\\\\Http\\\\Kernel.php\",\n            \"line\": 144,\n            \"function\": \"sendRequestThroughRouter\",\n            \"class\": \"Illuminate\\\\Foundation\\\\Http\\\\Kernel\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\knuckleswtf\\\\scribe\\\\src\\\\Extracting\\\\Strategies\\\\Responses\\\\ResponseCalls.php\",\n            \"line\": 236,\n            \"function\": \"handle\",\n            \"class\": \"Illuminate\\\\Foundation\\\\Http\\\\Kernel\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\knuckleswtf\\\\scribe\\\\src\\\\Extracting\\\\Strategies\\\\Responses\\\\ResponseCalls.php\",\n            \"line\": 229,\n            \"function\": \"callLaravelRoute\",\n            \"class\": \"Knuckles\\\\Scribe\\\\Extracting\\\\Strategies\\\\Responses\\\\ResponseCalls\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\knuckleswtf\\\\scribe\\\\src\\\\Extracting\\\\Strategies\\\\Responses\\\\ResponseCalls.php\",\n            \"line\": 103,\n            \"function\": \"makeApiCall\",\n            \"class\": \"Knuckles\\\\Scribe\\\\Extracting\\\\Strategies\\\\Responses\\\\ResponseCalls\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\knuckleswtf\\\\scribe\\\\src\\\\Extracting\\\\Strategies\\\\Responses\\\\ResponseCalls.php\",\n            \"line\": 39,\n            \"function\": \"makeResponseCall\",\n            \"class\": \"Knuckles\\\\Scribe\\\\Extracting\\\\Strategies\\\\Responses\\\\ResponseCalls\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\knuckleswtf\\\\scribe\\\\src\\\\Extracting\\\\Extractor.php\",\n            \"line\": 471,\n            \"function\": \"__invoke\",\n            \"class\": \"Knuckles\\\\Scribe\\\\Extracting\\\\Strategies\\\\Responses\\\\ResponseCalls\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\knuckleswtf\\\\scribe\\\\src\\\\Extracting\\\\Extractor.php\",\n            \"line\": 397,\n            \"function\": \"iterateThroughStrategies\",\n            \"class\": \"Knuckles\\\\Scribe\\\\Extracting\\\\Extractor\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\knuckleswtf\\\\scribe\\\\src\\\\Extracting\\\\Extractor.php\",\n            \"line\": 94,\n            \"function\": \"fetchResponses\",\n            \"class\": \"Knuckles\\\\Scribe\\\\Extracting\\\\Extractor\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\knuckleswtf\\\\scribe\\\\src\\\\GroupedEndpoints\\\\GroupedEndpointsFromApp.php\",\n            \"line\": 186,\n            \"function\": \"processRoute\",\n            \"class\": \"Knuckles\\\\Scribe\\\\Extracting\\\\Extractor\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Console\\\\View\\\\Components\\\\Task.php\",\n            \"line\": 41,\n            \"function\": \"Knuckles\\\\Scribe\\\\GroupedEndpoints\\\\{closure}\",\n            \"class\": \"Knuckles\\\\Scribe\\\\GroupedEndpoints\\\\GroupedEndpointsFromApp\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Console\\\\View\\\\Components\\\\Factory.php\",\n            \"line\": 59,\n            \"function\": \"render\",\n            \"class\": \"Illuminate\\\\Console\\\\View\\\\Components\\\\Task\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\knuckleswtf\\\\scribe\\\\src\\\\GroupedEndpoints\\\\GroupedEndpointsFromApp.php\",\n            \"line\": 183,\n            \"function\": \"__call\",\n            \"class\": \"Illuminate\\\\Console\\\\View\\\\Components\\\\Factory\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\knuckleswtf\\\\scribe\\\\src\\\\GroupedEndpoints\\\\GroupedEndpointsFromApp.php\",\n            \"line\": 73,\n            \"function\": \"extractEndpointsInfoFromLaravelApp\",\n            \"class\": \"Knuckles\\\\Scribe\\\\GroupedEndpoints\\\\GroupedEndpointsFromApp\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\knuckleswtf\\\\scribe\\\\src\\\\GroupedEndpoints\\\\GroupedEndpointsFromApp.php\",\n            \"line\": 51,\n            \"function\": \"extractEndpointsInfoAndWriteToDisk\",\n            \"class\": \"Knuckles\\\\Scribe\\\\GroupedEndpoints\\\\GroupedEndpointsFromApp\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\knuckleswtf\\\\scribe\\\\src\\\\Commands\\\\GenerateDocumentation.php\",\n            \"line\": 55,\n            \"function\": \"get\",\n            \"class\": \"Knuckles\\\\Scribe\\\\GroupedEndpoints\\\\GroupedEndpointsFromApp\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Container\\\\BoundMethod.php\",\n            \"line\": 36,\n            \"function\": \"handle\",\n            \"class\": \"Knuckles\\\\Scribe\\\\Commands\\\\GenerateDocumentation\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Container\\\\Util.php\",\n            \"line\": 43,\n            \"function\": \"Illuminate\\\\Container\\\\{closure}\",\n            \"class\": \"Illuminate\\\\Container\\\\BoundMethod\",\n            \"type\": \"::\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Container\\\\BoundMethod.php\",\n            \"line\": 96,\n            \"function\": \"unwrapIfClosure\",\n            \"class\": \"Illuminate\\\\Container\\\\Util\",\n            \"type\": \"::\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Container\\\\BoundMethod.php\",\n            \"line\": 35,\n            \"function\": \"callBoundMethod\",\n            \"class\": \"Illuminate\\\\Container\\\\BoundMethod\",\n            \"type\": \"::\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Container\\\\Container.php\",\n            \"line\": 799,\n            \"function\": \"call\",\n            \"class\": \"Illuminate\\\\Container\\\\BoundMethod\",\n            \"type\": \"::\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Console\\\\Command.php\",\n            \"line\": 211,\n            \"function\": \"call\",\n            \"class\": \"Illuminate\\\\Container\\\\Container\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\symfony\\\\console\\\\Command\\\\Command.php\",\n            \"line\": 341,\n            \"function\": \"execute\",\n            \"class\": \"Illuminate\\\\Console\\\\Command\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Console\\\\Command.php\",\n            \"line\": 180,\n            \"function\": \"run\",\n            \"class\": \"Symfony\\\\Component\\\\Console\\\\Command\\\\Command\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Console\\\\Concerns\\\\CallsCommands.php\",\n            \"line\": 68,\n            \"function\": \"run\",\n            \"class\": \"Illuminate\\\\Console\\\\Command\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Console\\\\Concerns\\\\CallsCommands.php\",\n            \"line\": 29,\n            \"function\": \"runCommand\",\n            \"class\": \"Illuminate\\\\Console\\\\Command\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\app\\\\Console\\\\Commands\\\\GenerateApiDocsCommand.php\",\n            \"line\": 37,\n            \"function\": \"call\",\n            \"class\": \"Illuminate\\\\Console\\\\Command\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\app\\\\Tenancy\\\\TenantContext.php\",\n            \"line\": 64,\n            \"function\": \"App\\\\Console\\\\Commands\\\\{closure}\",\n            \"class\": \"App\\\\Console\\\\Commands\\\\GenerateApiDocsCommand\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\app\\\\Console\\\\Commands\\\\GenerateApiDocsCommand.php\",\n            \"line\": 37,\n            \"function\": \"runAs\",\n            \"class\": \"App\\\\Tenancy\\\\TenantContext\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Container\\\\BoundMethod.php\",\n            \"line\": 36,\n            \"function\": \"handle\",\n            \"class\": \"App\\\\Console\\\\Commands\\\\GenerateApiDocsCommand\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Container\\\\Util.php\",\n            \"line\": 43,\n            \"function\": \"Illuminate\\\\Container\\\\{closure}\",\n            \"class\": \"Illuminate\\\\Container\\\\BoundMethod\",\n            \"type\": \"::\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Container\\\\BoundMethod.php\",\n            \"line\": 96,\n            \"function\": \"unwrapIfClosure\",\n            \"class\": \"Illuminate\\\\Container\\\\Util\",\n            \"type\": \"::\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Container\\\\BoundMethod.php\",\n            \"line\": 35,\n            \"function\": \"callBoundMethod\",\n            \"class\": \"Illuminate\\\\Container\\\\BoundMethod\",\n            \"type\": \"::\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Container\\\\Container.php\",\n            \"line\": 799,\n            \"function\": \"call\",\n            \"class\": \"Illuminate\\\\Container\\\\BoundMethod\",\n            \"type\": \"::\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Console\\\\Command.php\",\n            \"line\": 211,\n            \"function\": \"call\",\n            \"class\": \"Illuminate\\\\Container\\\\Container\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\symfony\\\\console\\\\Command\\\\Command.php\",\n            \"line\": 341,\n            \"function\": \"execute\",\n            \"class\": \"Illuminate\\\\Console\\\\Command\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Console\\\\Command.php\",\n            \"line\": 180,\n            \"function\": \"run\",\n            \"class\": \"Symfony\\\\Component\\\\Console\\\\Command\\\\Command\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\symfony\\\\console\\\\Application.php\",\n            \"line\": 1117,\n            \"function\": \"run\",\n            \"class\": \"Illuminate\\\\Console\\\\Command\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\symfony\\\\console\\\\Application.php\",\n            \"line\": 356,\n            \"function\": \"doRunCommand\",\n            \"class\": \"Symfony\\\\Component\\\\Console\\\\Application\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\symfony\\\\console\\\\Application.php\",\n            \"line\": 195,\n            \"function\": \"doRun\",\n            \"class\": \"Symfony\\\\Component\\\\Console\\\\Application\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Foundation\\\\Console\\\\Kernel.php\",\n            \"line\": 198,\n            \"function\": \"run\",\n            \"class\": \"Symfony\\\\Component\\\\Console\\\\Application\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Foundation\\\\Application.php\",\n            \"line\": 1235,\n            \"function\": \"handle\",\n            \"class\": \"Illuminate\\\\Foundation\\\\Console\\\\Kernel\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\artisan\",\n            \"line\": 16,\n            \"function\": \"handleCommand\",\n            \"class\": \"Illuminate\\\\Foundation\\\\Application\",\n            \"type\": \"->\"\n        }\n    ]\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 404,
+                            "body": "{\"message\":\"Not Found\"}",
+                            "name": "No such booking at this business."
+                        }
+                    ]
+                },
+                {
+                    "name": "Cancel a booking",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/bookings\/:reference",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/bookings\/:reference",
+                            "variable": [
+                                {
+                                    "id": "reference",
+                                    "key": "reference",
+                                    "value": 7,
+                                    "description": ""
+                                },
+                                {
+                                    "id": "tenant",
+                                    "key": "tenant",
+                                    "value": "demo",
+                                    "description": "The business's subdomain."
+                                },
+                                {
+                                    "id": "booking",
+                                    "key": "booking",
+                                    "value": "MW-7K3P9Q",
+                                    "description": "The booking reference."
+                                }
+                            ]
+                        },
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"reason\":\"Customer called to cancel\"}"
+                        },
+                        "description": "Needs the `bookings:write` ability. The appointment's time becomes\nimmediately bookable again and the customer is notified. Staff are not\nheld to the customer notice period."
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                }
+                            ],
+                            "code": 400,
+                            "body": "{\n    \"message\": \"Bad request.\",\n    \"exception\": \"Symfony\\\\Component\\\\HttpKernel\\\\Exception\\\\BadRequestHttpException\",\n    \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Foundation\\\\Exceptions\\\\Handler.php\",\n    \"line\": 674,\n    \"trace\": [\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Foundation\\\\Exceptions\\\\Handler.php\",\n            \"line\": 616,\n            \"function\": \"prepareException\",\n            \"class\": \"Illuminate\\\\Foundation\\\\Exceptions\\\\Handler\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\nunomaduro\\\\collision\\\\src\\\\Adapters\\\\Laravel\\\\ExceptionHandler.php\",\n            \"line\": 55,\n            \"function\": \"render\",\n            \"class\": \"Illuminate\\\\Foundation\\\\Exceptions\\\\Handler\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Routing\\\\Pipeline.php\",\n            \"line\": 51,\n            \"function\": \"render\",\n            \"class\": \"NunoMaduro\\\\Collision\\\\Adapters\\\\Laravel\\\\ExceptionHandler\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\",\n            \"line\": 224,\n            \"function\": \"handleException\",\n            \"class\": \"Illuminate\\\\Routing\\\\Pipeline\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Foundation\\\\Http\\\\Middleware\\\\InvokeDeferredCallbacks.php\",\n            \"line\": 22,\n            \"function\": \"Illuminate\\\\Pipeline\\\\{closure}\",\n            \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\",\n            \"line\": 219,\n            \"function\": \"handle\",\n            \"class\": \"Illuminate\\\\Foundation\\\\Http\\\\Middleware\\\\InvokeDeferredCallbacks\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Http\\\\Middleware\\\\ValidatePathEncoding.php\",\n            \"line\": 26,\n            \"function\": \"Illuminate\\\\Pipeline\\\\{closure}\",\n            \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\",\n            \"line\": 219,\n            \"function\": \"handle\",\n            \"class\": \"Illuminate\\\\Http\\\\Middleware\\\\ValidatePathEncoding\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\",\n            \"line\": 137,\n            \"function\": \"Illuminate\\\\Pipeline\\\\{closure}\",\n            \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Foundation\\\\Http\\\\Kernel.php\",\n            \"line\": 175,\n            \"function\": \"then\",\n            \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Foundation\\\\Http\\\\Kernel.php\",\n            \"line\": 144,\n            \"function\": \"sendRequestThroughRouter\",\n            \"class\": \"Illuminate\\\\Foundation\\\\Http\\\\Kernel\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\knuckleswtf\\\\scribe\\\\src\\\\Extracting\\\\Strategies\\\\Responses\\\\ResponseCalls.php\",\n            \"line\": 236,\n            \"function\": \"handle\",\n            \"class\": \"Illuminate\\\\Foundation\\\\Http\\\\Kernel\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\knuckleswtf\\\\scribe\\\\src\\\\Extracting\\\\Strategies\\\\Responses\\\\ResponseCalls.php\",\n            \"line\": 229,\n            \"function\": \"callLaravelRoute\",\n            \"class\": \"Knuckles\\\\Scribe\\\\Extracting\\\\Strategies\\\\Responses\\\\ResponseCalls\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\knuckleswtf\\\\scribe\\\\src\\\\Extracting\\\\Strategies\\\\Responses\\\\ResponseCalls.php\",\n            \"line\": 103,\n            \"function\": \"makeApiCall\",\n            \"class\": \"Knuckles\\\\Scribe\\\\Extracting\\\\Strategies\\\\Responses\\\\ResponseCalls\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\knuckleswtf\\\\scribe\\\\src\\\\Extracting\\\\Strategies\\\\Responses\\\\ResponseCalls.php\",\n            \"line\": 39,\n            \"function\": \"makeResponseCall\",\n            \"class\": \"Knuckles\\\\Scribe\\\\Extracting\\\\Strategies\\\\Responses\\\\ResponseCalls\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\knuckleswtf\\\\scribe\\\\src\\\\Extracting\\\\Extractor.php\",\n            \"line\": 471,\n            \"function\": \"__invoke\",\n            \"class\": \"Knuckles\\\\Scribe\\\\Extracting\\\\Strategies\\\\Responses\\\\ResponseCalls\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\knuckleswtf\\\\scribe\\\\src\\\\Extracting\\\\Extractor.php\",\n            \"line\": 397,\n            \"function\": \"iterateThroughStrategies\",\n            \"class\": \"Knuckles\\\\Scribe\\\\Extracting\\\\Extractor\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\knuckleswtf\\\\scribe\\\\src\\\\Extracting\\\\Extractor.php\",\n            \"line\": 94,\n            \"function\": \"fetchResponses\",\n            \"class\": \"Knuckles\\\\Scribe\\\\Extracting\\\\Extractor\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\knuckleswtf\\\\scribe\\\\src\\\\GroupedEndpoints\\\\GroupedEndpointsFromApp.php\",\n            \"line\": 186,\n            \"function\": \"processRoute\",\n            \"class\": \"Knuckles\\\\Scribe\\\\Extracting\\\\Extractor\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Console\\\\View\\\\Components\\\\Task.php\",\n            \"line\": 41,\n            \"function\": \"Knuckles\\\\Scribe\\\\GroupedEndpoints\\\\{closure}\",\n            \"class\": \"Knuckles\\\\Scribe\\\\GroupedEndpoints\\\\GroupedEndpointsFromApp\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Console\\\\View\\\\Components\\\\Factory.php\",\n            \"line\": 59,\n            \"function\": \"render\",\n            \"class\": \"Illuminate\\\\Console\\\\View\\\\Components\\\\Task\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\knuckleswtf\\\\scribe\\\\src\\\\GroupedEndpoints\\\\GroupedEndpointsFromApp.php\",\n            \"line\": 183,\n            \"function\": \"__call\",\n            \"class\": \"Illuminate\\\\Console\\\\View\\\\Components\\\\Factory\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\knuckleswtf\\\\scribe\\\\src\\\\GroupedEndpoints\\\\GroupedEndpointsFromApp.php\",\n            \"line\": 73,\n            \"function\": \"extractEndpointsInfoFromLaravelApp\",\n            \"class\": \"Knuckles\\\\Scribe\\\\GroupedEndpoints\\\\GroupedEndpointsFromApp\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\knuckleswtf\\\\scribe\\\\src\\\\GroupedEndpoints\\\\GroupedEndpointsFromApp.php\",\n            \"line\": 51,\n            \"function\": \"extractEndpointsInfoAndWriteToDisk\",\n            \"class\": \"Knuckles\\\\Scribe\\\\GroupedEndpoints\\\\GroupedEndpointsFromApp\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\knuckleswtf\\\\scribe\\\\src\\\\Commands\\\\GenerateDocumentation.php\",\n            \"line\": 55,\n            \"function\": \"get\",\n            \"class\": \"Knuckles\\\\Scribe\\\\GroupedEndpoints\\\\GroupedEndpointsFromApp\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Container\\\\BoundMethod.php\",\n            \"line\": 36,\n            \"function\": \"handle\",\n            \"class\": \"Knuckles\\\\Scribe\\\\Commands\\\\GenerateDocumentation\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Container\\\\Util.php\",\n            \"line\": 43,\n            \"function\": \"Illuminate\\\\Container\\\\{closure}\",\n            \"class\": \"Illuminate\\\\Container\\\\BoundMethod\",\n            \"type\": \"::\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Container\\\\BoundMethod.php\",\n            \"line\": 96,\n            \"function\": \"unwrapIfClosure\",\n            \"class\": \"Illuminate\\\\Container\\\\Util\",\n            \"type\": \"::\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Container\\\\BoundMethod.php\",\n            \"line\": 35,\n            \"function\": \"callBoundMethod\",\n            \"class\": \"Illuminate\\\\Container\\\\BoundMethod\",\n            \"type\": \"::\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Container\\\\Container.php\",\n            \"line\": 799,\n            \"function\": \"call\",\n            \"class\": \"Illuminate\\\\Container\\\\BoundMethod\",\n            \"type\": \"::\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Console\\\\Command.php\",\n            \"line\": 211,\n            \"function\": \"call\",\n            \"class\": \"Illuminate\\\\Container\\\\Container\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\symfony\\\\console\\\\Command\\\\Command.php\",\n            \"line\": 341,\n            \"function\": \"execute\",\n            \"class\": \"Illuminate\\\\Console\\\\Command\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Console\\\\Command.php\",\n            \"line\": 180,\n            \"function\": \"run\",\n            \"class\": \"Symfony\\\\Component\\\\Console\\\\Command\\\\Command\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Console\\\\Concerns\\\\CallsCommands.php\",\n            \"line\": 68,\n            \"function\": \"run\",\n            \"class\": \"Illuminate\\\\Console\\\\Command\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Console\\\\Concerns\\\\CallsCommands.php\",\n            \"line\": 29,\n            \"function\": \"runCommand\",\n            \"class\": \"Illuminate\\\\Console\\\\Command\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\app\\\\Console\\\\Commands\\\\GenerateApiDocsCommand.php\",\n            \"line\": 37,\n            \"function\": \"call\",\n            \"class\": \"Illuminate\\\\Console\\\\Command\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\app\\\\Tenancy\\\\TenantContext.php\",\n            \"line\": 64,\n            \"function\": \"App\\\\Console\\\\Commands\\\\{closure}\",\n            \"class\": \"App\\\\Console\\\\Commands\\\\GenerateApiDocsCommand\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\app\\\\Console\\\\Commands\\\\GenerateApiDocsCommand.php\",\n            \"line\": 37,\n            \"function\": \"runAs\",\n            \"class\": \"App\\\\Tenancy\\\\TenantContext\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Container\\\\BoundMethod.php\",\n            \"line\": 36,\n            \"function\": \"handle\",\n            \"class\": \"App\\\\Console\\\\Commands\\\\GenerateApiDocsCommand\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Container\\\\Util.php\",\n            \"line\": 43,\n            \"function\": \"Illuminate\\\\Container\\\\{closure}\",\n            \"class\": \"Illuminate\\\\Container\\\\BoundMethod\",\n            \"type\": \"::\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Container\\\\BoundMethod.php\",\n            \"line\": 96,\n            \"function\": \"unwrapIfClosure\",\n            \"class\": \"Illuminate\\\\Container\\\\Util\",\n            \"type\": \"::\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Container\\\\BoundMethod.php\",\n            \"line\": 35,\n            \"function\": \"callBoundMethod\",\n            \"class\": \"Illuminate\\\\Container\\\\BoundMethod\",\n            \"type\": \"::\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Container\\\\Container.php\",\n            \"line\": 799,\n            \"function\": \"call\",\n            \"class\": \"Illuminate\\\\Container\\\\BoundMethod\",\n            \"type\": \"::\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Console\\\\Command.php\",\n            \"line\": 211,\n            \"function\": \"call\",\n            \"class\": \"Illuminate\\\\Container\\\\Container\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\symfony\\\\console\\\\Command\\\\Command.php\",\n            \"line\": 341,\n            \"function\": \"execute\",\n            \"class\": \"Illuminate\\\\Console\\\\Command\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Console\\\\Command.php\",\n            \"line\": 180,\n            \"function\": \"run\",\n            \"class\": \"Symfony\\\\Component\\\\Console\\\\Command\\\\Command\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\symfony\\\\console\\\\Application.php\",\n            \"line\": 1117,\n            \"function\": \"run\",\n            \"class\": \"Illuminate\\\\Console\\\\Command\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\symfony\\\\console\\\\Application.php\",\n            \"line\": 356,\n            \"function\": \"doRunCommand\",\n            \"class\": \"Symfony\\\\Component\\\\Console\\\\Application\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\symfony\\\\console\\\\Application.php\",\n            \"line\": 195,\n            \"function\": \"doRun\",\n            \"class\": \"Symfony\\\\Component\\\\Console\\\\Application\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Foundation\\\\Console\\\\Kernel.php\",\n            \"line\": 198,\n            \"function\": \"run\",\n            \"class\": \"Symfony\\\\Component\\\\Console\\\\Application\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Foundation\\\\Application.php\",\n            \"line\": 1235,\n            \"function\": \"handle\",\n            \"class\": \"Illuminate\\\\Foundation\\\\Console\\\\Kernel\",\n            \"type\": \"->\"\n        },\n        {\n            \"file\": \"C:\\\\xampp8.4\\\\htdocs\\\\maw3idy\\\\artisan\",\n            \"line\": 16,\n            \"function\": \"handleCommand\",\n            \"class\": \"Illuminate\\\\Foundation\\\\Application\",\n            \"type\": \"->\"\n        }\n    ]\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 422,
+                            "body": "{\"message\":\"This booking has already been cancelled.\"}",
+                            "name": "Already cancelled, or in the past."
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Services",
+            "description": "What the business offers. Public, and throttled to 60 requests a minute.",
+            "item": [
+                {
+                    "name": "List bookable services",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/services",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/services",
+                            "variable": [
+                                {
+                                    "id": "tenant",
+                                    "key": "tenant",
+                                    "value": "demo",
+                                    "description": "The business's subdomain."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "Only services that are active and have at least one active staff member\nare listed: anything else could not be booked.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\"data\":[{\"id\":1,\"name\":\"Haircut\",\"description\":\"Wash, cut and style.\",\"duration_minutes\":30,\"buffer_after_minutes\":5,\"price\":\"80.00\",\"currency\":\"SAR\",\"active\":true,\"staff\":[{\"id\":1,\"name\":\"Sara\",\"active\":true}]}],\"meta\":{\"timezone\":\"Asia\\\/Riyadh\"}}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Show one service",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/services\/:id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/services\/:id",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": 1,
+                                    "description": "The ID of the service."
+                                },
+                                {
+                                    "id": "tenant",
+                                    "key": "tenant",
+                                    "value": "demo",
+                                    "description": "The business's subdomain."
+                                },
+                                {
+                                    "id": "service",
+                                    "key": "service",
+                                    "value": 1,
+                                    "description": "The service id."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\"data\":{\"id\":1,\"name\":\"Haircut\",\"description\":\"Wash, cut and style.\",\"duration_minutes\":30,\"buffer_after_minutes\":5,\"price\":\"80.00\",\"currency\":\"SAR\",\"active\":true,\"staff\":[{\"id\":1,\"name\":\"Sara\",\"active\":true}]},\"meta\":{\"timezone\":\"Asia\\\/Riyadh\"}}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 404,
+                            "body": "{\"message\":\"Not Found\"}",
+                            "name": "No such service, or it is not bookable."
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Tokens",
+            "description": "Getting and giving up API access.",
+            "item": [
+                {
+                    "name": "Create a token",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/tokens",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/tokens",
+                            "variable": [
+                                {
+                                    "id": "tenant",
+                                    "key": "tenant",
+                                    "value": "demo",
+                                    "description": "The business's subdomain. The token will only work here."
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"email\":\"owner@demo.test\",\"password\":\"password\",\"device_name\":\"Front desk iPad\",\"abilities\":[\"bookings:write\"]}"
+                        },
+                        "description": "Send a staff account's email and password and receive a bearer token.\nAsk for `abilities` explicitly to be able to write; without them the\ntoken can only read.\n\nThrottled to five attempts a minute per caller and per email address.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 201,
+                            "body": "{\"token\":\"7|xGqz0Rk2mVb8yQ1pLw4TfHsDcE6aJhN3\",\"abilities\":[\"services:read\",\"bookings:read\"],\"tenant\":\"demo\"}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 422,
+                            "body": "{\"message\":\"These credentials do not match our records.\",\"errors\":{\"email\":[\"These credentials do not match our records.\"]}}",
+                            "name": "Wrong credentials, or an account that belongs to another business."
+                        },
+                        {
+                            "header": [],
+                            "code": 429,
+                            "body": "{\"message\":\"Too Many Attempts.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Revoke the current token",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/tokens\/current",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/tokens\/current",
+                            "variable": [
+                                {
+                                    "id": "tenant",
+                                    "key": "tenant",
+                                    "value": "demo",
+                                    "description": "The business's subdomain. The token will only work here."
+                                }
+                            ]
+                        },
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "Deletes the token this request was made with. Other tokens are untouched."
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\"revoked\":true}",
+                            "name": ""
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "Authorization",
+                "type": "string"
+            }
+        ]
+    }
+}

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -28,6 +29,20 @@ class AppServiceProvider extends ServiceProvider
         $this->configureModels();
         $this->configureDates();
         $this->configureSecurity();
+        $this->configureViews();
+    }
+
+    /**
+     * Every layout needs the request's CSP nonce, and none of them should have
+     * to know where it came from.
+     */
+    private function configureViews(): void
+    {
+        View::share('cspNonce', null);
+
+        View::composer('*', function ($view): void {
+            $view->with('cspNonce', request()->attributes->get('csp_nonce'));
+        });
     }
 
     /**

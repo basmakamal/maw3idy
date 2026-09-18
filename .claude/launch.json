@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "maw3idy",
+      "runtimeExecutable": "C:\\xampp8.4\\php\\php.exe",
+      "runtimeArgs": ["artisan", "serve", "--host=127.0.0.1", "--port=8000"],
+      "port": 8000,
+      "url": "http://maw3idy.localhost:8000"
+    }
+  ]
+}

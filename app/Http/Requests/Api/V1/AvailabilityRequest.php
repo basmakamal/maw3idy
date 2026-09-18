@@ -31,4 +31,23 @@ final class AvailabilityRequest extends FormRequest
             'staff_id' => ['sometimes', 'integer', Rule::exists('staff', 'id')->where('tenant_id', tenant()->getKey())],
         ];
     }
+
+    /**
+     * Documentation for the generated API reference.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public function queryParameters(): array
+    {
+        return [
+            'date' => [
+                'description' => 'The day to check, in the business\'s timezone. Today or later, and within the booking window.',
+                'example' => '2026-10-05',
+            ],
+            'staff_id' => [
+                'description' => 'Limit the answer to one staff member. Omit to see every time anyone could take.',
+                'example' => 1,
+            ],
+        ];
+    }
 }

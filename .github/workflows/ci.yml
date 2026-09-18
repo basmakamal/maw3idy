@@ -111,9 +111,43 @@ jobs:
       - name: Run test suite
         run: vendor/bin/pest --ci --coverage --coverage-clover=coverage.xml
 
+      # Floors for the whole suite and, separately, for the availability engine
+      # and the tenancy layer: a healthy average can hide an untested engine.
+      - name: Coverage floors
+        run: php scripts/coverage-gate.php coverage.xml
+
       - uses: actions/upload-artifact@v7
         if: matrix.php == '8.2'
         with:
           name: coverage
           path: coverage.xml
           retention-days: 7
+
+  docs:
+    name: API reference is current
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          coverage: none
+      - uses: ramsey/composer-install@v4
+
+      - name: Prepare application
+        run: |
+          cp .env.example .env
+          php artisan key:generate --ansi
+
+      # Regenerate and diff: a merged change to a route, a form request or a
+      # response shape has to arrive with its documentation.
+      - name: Regenerate the reference
+        run: php artisan docs:api
+
+      - name: Fail if the committed reference is stale
+        run: |
+          if ! git diff --quiet -- public/docs; then
+            echo "::error::public/docs is out of date. Run 'composer docs' and commit the result."
+            git diff --stat -- public/docs
+            exit 1
+          fi
