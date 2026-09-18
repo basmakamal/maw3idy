@@ -23,7 +23,7 @@ use Knuckles\Scribe\Attributes\UrlParam;
 #[Group('Availability', 'When a service can be booked. Public, and throttled to 60 requests a minute.')]
 #[Unauthenticated]
 #[UrlParam('tenant', description: 'The business\'s subdomain.', example: 'demo')]
-#[UrlParam('service', 'integer', 'The service id.', example: 1)]
+#[UrlParam('service_id', 'integer', 'The service id.', example: 1)]
 final class AvailabilityController extends Controller
 {
     /**

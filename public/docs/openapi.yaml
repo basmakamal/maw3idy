@@ -176,7 +176,7 @@ paths:
       -
         in: path
         name: service_id
-        description: 'The ID of the service.'
+        description: 'The service id.'
         required: true
         schema:
           type: integer
@@ -191,15 +191,6 @@ paths:
           type: string
           examples:
             - demo
-      -
-        in: path
-        name: service
-        description: 'The service id.'
-        required: true
-        schema:
-          type: integer
-          examples:
-            - 1
   /api/v1/bookings:
     get:
       summary: 'List bookings'
@@ -890,7 +881,7 @@ paths:
                           type: '->'
                         -
                           file: 'C:\xampp8.4\htdocs\maw3idy\app\Console\Commands\GenerateApiDocsCommand.php'
-                          line: 37
+                          line: 32
                           function: call
                           class: Illuminate\Console\Command
                           type: '->'
@@ -902,7 +893,7 @@ paths:
                           type: '->'
                         -
                           file: 'C:\xampp8.4\htdocs\maw3idy\app\Console\Commands\GenerateApiDocsCommand.php'
-                          line: 37
+                          line: 32
                           function: runAs
                           class: App\Tenancy\TenantContext
                           type: '->'
@@ -1209,7 +1200,7 @@ paths:
                         type: '->'
                       -
                         file: 'C:\xampp8.4\htdocs\maw3idy\app\Console\Commands\GenerateApiDocsCommand.php'
-                        line: 37
+                        line: 32
                         function: call
                         class: Illuminate\Console\Command
                         type: '->'
@@ -1221,7 +1212,7 @@ paths:
                         type: '->'
                       -
                         file: 'C:\xampp8.4\htdocs\maw3idy\app\Console\Commands\GenerateApiDocsCommand.php'
-                        line: 37
+                        line: 32
                         function: runAs
                         class: App\Tenancy\TenantContext
                         type: '->'
@@ -1593,7 +1584,7 @@ paths:
                           type: '->'
                         -
                           file: 'C:\xampp8.4\htdocs\maw3idy\app\Console\Commands\GenerateApiDocsCommand.php'
-                          line: 37
+                          line: 32
                           function: call
                           class: Illuminate\Console\Command
                           type: '->'
@@ -1605,7 +1596,7 @@ paths:
                           type: '->'
                         -
                           file: 'C:\xampp8.4\htdocs\maw3idy\app\Console\Commands\GenerateApiDocsCommand.php'
-                          line: 37
+                          line: 32
                           function: runAs
                           class: App\Tenancy\TenantContext
                           type: '->'
@@ -1912,7 +1903,7 @@ paths:
                         type: '->'
                       -
                         file: 'C:\xampp8.4\htdocs\maw3idy\app\Console\Commands\GenerateApiDocsCommand.php'
-                        line: 37
+                        line: 32
                         function: call
                         class: Illuminate\Console\Command
                         type: '->'
@@ -1924,7 +1915,7 @@ paths:
                         type: '->'
                       -
                         file: 'C:\xampp8.4\htdocs\maw3idy\app\Console\Commands\GenerateApiDocsCommand.php'
-                        line: 37
+                        line: 32
                         function: runAs
                         class: App\Tenancy\TenantContext
                         type: '->'
@@ -2325,7 +2316,7 @@ paths:
             - demo
       -
         in: path
-        name: service
+        name: service_id
         description: 'The service id.'
         required: true
         schema:

@@ -231,7 +231,10 @@ return [
         // With API resources and transformers, Scribe tries to generate example models to use in your API responses.
         // By default, Scribe will try the model's factory, and if that fails, try fetching the first from the database.
         // You can reorder or remove strategies here.
-        'models_source' => ['factoryCreate', 'factoryMake', 'databaseFirst'],
+        // factoryMake only: it builds models in memory, so generating the
+        // reference neither needs a database nor writes to one. The endpoints
+        // declare their example responses explicitly anyway.
+        'models_source' => ['factoryMake'],
     ],
 
     // The strategies Scribe will use to extract information about your routes at each stage.

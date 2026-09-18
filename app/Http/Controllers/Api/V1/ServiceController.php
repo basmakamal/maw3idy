@@ -60,7 +60,7 @@ final class ServiceController extends Controller
     /**
      * Show one service
      */
-    #[UrlParam('service', 'integer', 'The service id.', example: 1)]
+    #[UrlParam('service_id', 'integer', 'The service id.', example: 1)]
     #[Response(content: [
         'data' => [
             'id' => 1,

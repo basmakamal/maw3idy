@@ -126,11 +126,34 @@ jobs:
   docs:
     name: API reference is current
     runs-on: ubuntu-latest
+
+    # Scribe asks the database for a realistic id when a route binds a model,
+    # so the reference is generated against the same seeded demo data locally
+    # and here. Without that the two would differ and this check would be noise.
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: maw3idy
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -ppassword"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      DB_HOST: 127.0.0.1
+      DB_DATABASE: maw3idy
+      DB_PASSWORD: password
+
     steps:
       - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, pdo_mysql, bcmath, intl
           coverage: none
       - uses: ramsey/composer-install@v4
 
@@ -138,6 +161,7 @@ jobs:
         run: |
           cp .env.example .env
           php artisan key:generate --ansi
+          php artisan migrate --force --seed --ansi
 
       # Regenerate and diff: a merged change to a route, a form request or a
       # response shape has to arrive with its documentation.
