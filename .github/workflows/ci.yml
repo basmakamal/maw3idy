@@ -163,15 +163,16 @@ jobs:
           php artisan key:generate --ansi
           php artisan migrate --force --seed --ansi
 
-      # Regenerate and diff: a merged change to a route, a form request or a
-      # response shape has to arrive with its documentation.
+      # Regenerate, then compare the API's shape: a merged change to a route, a
+      # form request or a response has to arrive with its documentation.
+      # Bytes are not compared, because some descriptions are built from
+      # validation rules and a rule like `after_or_equal:today` writes today's
+      # date into the text; see scripts/docs-drift.php.
+      - name: Keep the committed reference aside
+        run: cp public/docs/openapi.yaml "${RUNNER_TEMP}/committed-openapi.yaml"
+
       - name: Regenerate the reference
         run: php artisan docs:api
 
-      - name: Fail if the committed reference is stale
-        run: |
-          if ! git diff --quiet -- public/docs; then
-            echo "::error::public/docs is out of date. Run 'composer docs' and commit the result."
-            git diff --stat -- public/docs
-            exit 1
-          fi
+      - name: Fail if the committed reference no longer matches the code
+        run: php scripts/docs-drift.php "${RUNNER_TEMP}/committed-openapi.yaml" public/docs/openapi.yaml
