@@ -1,8 +1,19 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use App\Console\Commands\SendBookingRemindersCommand;
+use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+/*
+|--------------------------------------------------------------------------
+| Scheduled work
+|--------------------------------------------------------------------------
+|
+| Reminders are found by query, not by delayed jobs, so this runs often
+| enough to be timely and is safe to run twice (see the command).
+|
+*/
+
+Schedule::command(SendBookingRemindersCommand::class)
+    ->everyFifteenMinutes()
+    ->withoutOverlapping()
+    ->runInBackground();

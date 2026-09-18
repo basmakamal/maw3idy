@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\Localization;
 use App\Tenancy\Resolvers\TenantResolver;
 use App\Tenancy\TenantContext;
 use Closure;
@@ -45,7 +46,8 @@ final class IdentifyTenant
         }
         URL::defaults(['tenant' => $tenant->slug]);
 
-        app()->setLocale($tenant->locale);
+        // The tenant's language, unless this visitor asked for another one.
+        app()->setLocale(Localization::chosen($request) ?? $tenant->locale);
 
         return $next($request);
     }

@@ -30,6 +30,7 @@
                     @endif
                 </div>
                 <div class="flex shrink-0 items-center gap-4">
+                    <x-language-switcher route="tenant.locale" class="hidden sm:inline-flex" />
                     <span class="hidden text-sm text-stone-600 sm:inline">{{ auth()->user()?->name }}</span>
                     <form method="POST" action="{{ route('tenant.logout') }}">
                         @csrf

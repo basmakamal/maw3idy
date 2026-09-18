@@ -90,24 +90,30 @@ Deferred from this phase: minimum notice / lead time before a slot, multiple blo
 
 ---
 
-## Phase 3 — Week 3: Product polish
+## Phase 3 — Week 3: Product polish ✅
 
 ### Notifications
-- [ ] `BookingConfirmed` + `BookingReminder` notifications, queued (database driver locally, Redis in production via config only)
-- [ ] Reminder scheduled 24h before via `schedule` + query, not delayed jobs (survives redeploys — note this in README)
-- [ ] Channel abstraction: `NotificationChannel` interface with `MailChannel` implemented, `WhatsAppChannel` stubbed — shows the pattern without the API cost
+- [x] Confirmation, reminder, cancellation and reschedule messages, queued (database driver locally, Redis in production via config only)
+- [x] Reminder found by a scheduled query 24h before, not delayed jobs, claimed with a conditional `UPDATE` so downtime delays but never loses or duplicates them (ADR-015)
+- [x] Channel abstraction: `CustomerChannel` contract with `MailChannel` implemented and `WhatsAppChannel` wired and tested behind a gateway contract whose implementation logs — the pattern without the API cost (ADR-014)
+- [x] One queued job per channel, each restoring the booking's tenant and language; mail pins the locale so lazy rendering cannot lose it
+- [x] Hand-written HTML mail that reads right-to-left for Arabic tenants
 
 ### Manage bookings
-- [ ] Signed cancellation/reschedule URL in the confirmation email
-- [ ] Dashboard calendar (day/week view) for the business, filter by staff
-- [ ] Booking statuses + cancellation reason
+- [x] Signed cancellation/reschedule URL in every message, carrying the booking's capability token (ADR-016)
+- [x] Customers can cancel with a reason, or move the booking to another slot with the same staff member, outside a configurable notice period
+- [x] Dashboard calendar (day and week view) for the business, filter by staff, show or hide cancelled, cancel from the diary
+- [x] Booking statuses + cancellation reason shown to both sides
 
 ### Timezones & localization
-- [ ] Store UTC, display in tenant timezone; customer-facing pages state the timezone explicitly
-- [ ] `ar` + `en` locales, RTL layout for Arabic (logical Tailwind properties: `ms-`/`me-`), language switcher per tenant
-- [ ] Seeded demo tenant in Arabic to screenshot for the README
+- [x] Store UTC, display in tenant timezone; customer-facing pages state the timezone explicitly
+- [x] `ar` + `en` locales, RTL layout for Arabic (logical properties: `ms-`/`me-`, `text-start`), language switcher on every layout, remembered per host (ADR-017)
+- [x] A test walks every `__()` call and fails if the Arabic file is missing a string
+- [x] Seeded demo tenant in Arabic, with services, staff, hours and bookings
 
 **Done when:** a real salon could use it for a week without hitting a wall.
+
+Deferred from this phase: SMS (no provider), a business-facing digest of the day's bookings, customer-initiated rescheduling onto a different staff member, ICS calendar attachments.
 
 ---
 

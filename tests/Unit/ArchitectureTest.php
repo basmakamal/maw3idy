@@ -1,5 +1,7 @@
 <?php
 
+use App\Mail\CustomerNotificationMail;
+
 /*
  * Conventions enforced by the test suite rather than by code review:
  * no debugging leftovers, no insecure PHP functions, Laravel structure respected.
@@ -9,7 +11,13 @@ arch()->preset()->php();
 
 arch()->preset()->security();
 
-arch()->preset()->laravel();
+arch()->preset()->laravel()->ignoring([
+    // The preset wants Mailables to be queueable. This one is queued one level
+    // up, by SendCustomerNotification, which runs one job per channel so each
+    // transport retries alone; making the Mailable queueable too would add a
+    // second hop and split one message's retries across two jobs.
+    CustomerNotificationMail::class,
+]);
 
 arch('models are Eloquent models and are only used by the application and database layers')
     ->expect('App\Models')
@@ -32,3 +40,22 @@ arch('every model is tenant scoped unless explicitly central')
 arch('tenancy internals stay behind the trait and middleware')
     ->expect('App\Tenancy\Scopes\TenantScope')
     ->toOnlyBeUsedIn(['App\Tenancy']);
+
+/*
+ * Customer messages are ours, not Illuminate notifications: a customer is a
+ * name and a phone number on a booking row, never a Notifiable model.
+ */
+arch('every customer message is a CustomerNotification')
+    ->expect('App\Messaging')
+    ->toExtend('App\Messaging\CustomerNotification')
+    ->ignoring([
+        'App\Messaging\ChannelRegistry',
+        'App\Messaging\Channels',
+        'App\Messaging\Contracts',
+        'App\Messaging\CustomerNotifier',
+        'App\Messaging\Gateways',
+    ]);
+
+arch('every delivery channel implements the channel contract')
+    ->expect('App\Messaging\Channels')
+    ->toImplement('App\Messaging\Contracts\CustomerChannel');

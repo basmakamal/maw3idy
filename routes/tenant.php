@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Booking\BookingConfirmationController;
+use App\Http\Controllers\Booking\ManageBookingController;
 use App\Http\Controllers\Dashboard\StaffScheduleController;
+use App\Http\Controllers\LocaleController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,11 +20,18 @@ use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard')->name('home');
 
+Route::post('/locale', LocaleController::class)->name('locale');
+
 /*
 | Public booking page: no account needed.
 */
 Route::view('/book', 'booking.book')->name('book');
 Route::get('/book/confirmed', BookingConfirmationController::class)->name('book.confirmed');
+
+// The customer's own link from their email: signed, and carrying the booking's secret token.
+Route::get('/booking/{token}', ManageBookingController::class)
+    ->middleware('signed')
+    ->name('booking.manage');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');

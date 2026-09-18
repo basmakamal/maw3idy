@@ -24,8 +24,9 @@
             {{ $slot }}
         </main>
 
-        <footer class="mt-8 text-center text-xs text-stone-400">
-            {{ __('Powered by') }} <a href="{{ route('central.home') }}" class="font-medium text-stone-500 hover:text-teal-800">{{ config('app.name') }}</a>
+        <footer class="mt-8 flex flex-col items-center gap-3 text-xs text-stone-400">
+            <x-language-switcher route="tenant.locale" />
+            <p>{{ __('Powered by') }} <a href="{{ route('central.home') }}" class="font-medium text-stone-500 hover:text-teal-800">{{ config('app.name') }}</a></p>
         </footer>
     </div>
     @livewireScripts

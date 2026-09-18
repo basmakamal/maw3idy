@@ -14,10 +14,11 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT"></a>
 </p>
 
-> **Status:** in development. Phases 0–2 are complete: repo and CI, multi-tenancy with
-> tenant-scoped auth, and the booking domain (services, staff, schedules, a pure availability
-> engine, a race-proof public booking flow). Progress is tracked in [`ROADMAP.md`](ROADMAP.md);
-> each phase lands as a pull request.
+> **Status:** in development. Phases 0–3 are complete: repo and CI, multi-tenancy with
+> tenant-scoped auth, the booking domain (services, staff, schedules, a pure availability
+> engine, a race-proof public booking flow), and the product polish around it (notifications
+> with a channel abstraction, customer self-service, a dashboard calendar, Arabic and English
+> with RTL). Progress is tracked in [`ROADMAP.md`](ROADMAP.md); each phase lands as a pull request.
 
 ---
 
@@ -47,6 +48,14 @@ The test suite has three parts: `Unit` (the availability engine runs without a d
 `Feature` (HTTP and Livewire, each test in a rolled-back transaction) and `Concurrency`
 (separate PHP processes fired at the same slot against committed data). `composer test` runs
 all three.
+
+Mail is written to `storage/logs` by default; point `MAIL_MAILER=smtp` at Mailpit on
+`127.0.0.1:1025` to read it in a browser. Reminders need the scheduler and a queue worker:
+
+```bash
+php artisan schedule:work
+php artisan queue:work
+```
 
 Quality gates — the same ones CI runs:
 
@@ -178,6 +187,48 @@ booking or that booking's buffer.
 copied onto the booking. Renaming, repricing or shortening a service afterwards changes
 future offers but never rewrites what a customer already agreed to, and the availability
 engine keeps blocking the time that was actually promised.
+
+**ADR-014 · Our own message layer, not Illuminate notifications (2026-09-17).** A customer
+is a name and a phone number on a booking row, never a `Notifiable` model, so `App\Messaging`
+defines its own `CustomerChannel` contract: each channel says whether it is configured and
+whether it can reach *this* customer, and `CustomerNotifier` queues **one job per channel**
+so a refused SMTP handshake retries without re-sending what already went out. Every job
+restores the booking's tenant (a worker has no request, so nothing is bound) and switches to
+the tenant's language before any text is built; mail additionally pins that locale onto the
+Mailable, because a Mailable renders lazily and would otherwise pick up whatever locale is
+active at render time. WhatsApp ships as a fully wired, tested channel whose gateway
+implementation logs instead of calling the Business API: turning it on is a config flag plus
+one class. The cost of not using Laravel's notification system is losing its database and
+broadcast channels for free; the gain is that the customer model stays a row, not a user.
+
+**ADR-015 · Reminders come from a scheduled query, not delayed jobs (2026-09-17).** A job
+delayed by 24 hours is a promise held by the queue: flush it, redeploy onto a fresh Redis, or
+lose the server, and the reminder is gone silently. Instead a command runs every fifteen
+minutes and asks which confirmed bookings start within the reminder window and have no
+`reminder_sent_at`. A conditional `UPDATE` claims each one before it is queued, so two
+overlapping runs cannot double-send, and an hour of downtime delays reminders rather than
+losing them. A booking cancelled in between is skipped twice over: by the query, and by the
+job re-checking relevance before it renders.
+
+**ADR-016 · Customer self-service is a signed URL plus a capability token (2026-09-17).**
+The link in the confirmation email is a signed route carrying the booking's random
+`cancel_token`. The signature rejects crafted, truncated or probed links before any database
+lookup; the token is the authority, so there is no customer login to build and no password to
+reset; and the lookup still runs inside the tenant scope, so another tenant's token is a 404
+rather than someone else's phone number. The link does not expire, because a customer needs
+it right up to the appointment. Instead, changes are refused inside a configurable notice
+period (default two hours), which staff can always override from the dashboard. In the
+Livewire component the token is `#[Locked]` and every action re-reads the booking by it, so
+nothing is trusted between requests.
+
+**ADR-017 · Language is a per-visitor choice over a per-tenant default (2026-09-17).** Each
+tenant has a locale, and that is what a visitor sees first. A switcher can override it, and
+the choice lives in the session, which is host-only: a customer who prefers English at one
+salon does not change what another salon's customers see. Arabic is a full translation
+(`lang/ar.json` plus validation and auth messages), and a test walks every `__()` call in the
+codebase and fails if any string is missing from it, so the translation cannot quietly rot.
+Layouts use logical CSS properties throughout (`ms-`, `me-`, `text-start`), so right-to-left
+is one `dir` attribute rather than a parallel stylesheet.
 
 ## Security baseline
 
