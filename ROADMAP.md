@@ -120,23 +120,31 @@ Deferred from this phase: SMS (no provider), a business-facing digest of the day
 ## Phase 4 — Week 4: Professional wrapper & launch
 
 ### API
-- [ ] `/api/v1`: auth via Sanctum tokens, endpoints for services, availability, bookings (create/cancel)
-- [ ] Rate limiting on the public availability endpoint
-- [ ] OpenAPI docs generated with Scribe, published via GitHub Pages or `/docs`
+- [x] `/api/v1` on each tenant's subdomain: Sanctum tokens with explicit abilities, endpoints for services, availability, bookings (list/create/show/cancel) — ADR-018, ADR-019
+- [x] Rate limiting on the public availability endpoint, plus separate limits for credential guessing and authenticated integrations
+- [x] Domain failures mapped to status codes (409 when a slot has gone, 422 when a booking cannot change)
+- [x] OpenAPI 3.1 + HTML + Postman generated with Scribe into `public/docs`, served at `/docs`, ready for GitHub Pages; CI regenerates and fails if the committed copy is stale — ADR-020
 
 ### Quality gate
-- [ ] Coverage: availability engine ~100%, booking flow feature tests, tenancy isolation tests — overall ~80%
-- [x] Pint + Larastan (level 6) in CI — from Phase 0; raise the level as the codebase grows
-- [ ] `composer demo`: seeds 2 tenants, 3 staff, services, a week of bookings
-- [ ] Content-Security-Policy with per-request nonces once the Vite/Livewire asset story is settled
+- [x] Coverage floors enforced in CI: 80% overall, 95% on the availability engine, 90% on the tenancy layer — ADR-022
+- [x] Pint + Larastan (level 6) in CI — from Phase 0
+- [x] `composer demo`: resets and reseeds two tenants, four staff, five services, hours, time off and upcoming bookings
+- [x] Content-Security-Policy with per-request nonces, verified in a real browser — ADR-021
 
 ### Ship it
 - [ ] Deploy demo (small VPS / Railway / Fly.io) with a real subdomain wildcard + Let's Encrypt wildcard cert
-- [ ] README final: GIF of booking flow, architecture diagram (Mermaid), "Design decisions", "Running locally", "Roadmap / out of scope"
-- [ ] Roadmap section lists v2 ideas explicitly NOT built: payments, subscriptions, SMS provider, mobile app
-- [ ] Pin the repo on your GitHub profile; add 3-line description + topics (laravel, multi-tenancy, saas, booking)
+- [x] README final: architecture diagram (Mermaid), API section with working examples, deployment requirements, "Design decisions" (22 ADRs), "Running locally", "Roadmap / out of scope"
+- [ ] GIF of the booking flow in the README
+- [x] Roadmap section lists v2 ideas explicitly NOT built, with the reason for each
+- [x] Repo description + topics
+- [ ] Pin the repo on the GitHub profile
 
 **Done when:** the repo answers every "can she build production systems?" question before the interview starts.
+
+The three open items all need a human: a hosting account and DNS for the demo, a screen
+recording for the GIF, and a click on your own profile to pin the repo. Everything they
+depend on is in place — see the Deploying section of the README for exactly what the host
+needs.
 
 ---
 

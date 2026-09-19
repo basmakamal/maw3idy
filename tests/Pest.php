@@ -46,6 +46,29 @@ function tenantUrl(Tenant $tenant, string $path = '/'): string
     return 'http://'.$tenant->slug.'.'.config('tenancy.central_domain').'/'.ltrim($path, '/');
 }
 
+function apiUrl(Tenant $tenant, string $path = '/'): string
+{
+    return tenantUrl($tenant, '/api/v1'.$path);
+}
+
+/**
+ * Cross the boundary between two real requests.
+ *
+ * A real request resolves the authenticated user from scratch and binds its
+ * own tenant; the test client keeps the auth guard alive between calls and
+ * IdentifyTenant deliberately forgets the tenant when a response is sent. Call
+ * this between requests in one test, passing the tenant when the assertions
+ * afterwards query tenant-owned models.
+ */
+function betweenRequests(?Tenant $tenant = null): void
+{
+    auth()->forgetGuards();
+
+    if ($tenant !== null) {
+        bindTenant($tenant);
+    }
+}
+
 /**
  * Bind a tenant the way a real request on its subdomain would, for tests that
  * bypass HTTP (domain code, Livewire component tests): tenant in the container,
